@@ -44,7 +44,11 @@ const QA_CONFIG = (
     #      prefixes = ("MyPkg", "SomeTrigger"),
     #      expect_phantoms = false,    # true if a third party adds phantoms
     #      broken = false)             # true to quarantine a known ambiguity
-    extensions = ((; name = :LoweredDistributionsCatalystExt,
-        triggers = ("Catalyst",),
-        prefixes = ("LoweredDistributions", "Catalyst")),)
+    extensions = (
+        (; name = :LoweredDistributionsCatalystExt,
+            triggers = ("Catalyst",),
+            prefixes = ("LoweredDistributions", "Catalyst")),
+        (; name = :LoweredDistributionsSciMLBaseExt,
+            triggers = ("SciMLBase",),
+            prefixes = ("LoweredDistributions", "SciMLBase")))
 )
