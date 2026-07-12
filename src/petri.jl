@@ -19,11 +19,13 @@ AlgebraicPetri.jl is loaded (`using AlgebraicPetri`); the method lives in the
 
 AlgebraicPetri's own `vectorfield` also accepts a time/state-varying
 `Function` rate per transition (its mass-action kinetics is more general than
-this package needs), but every `AbstractLowering`'s generator is constant
-(its `Q`/`S` element type is constrained to `<: AbstractMatrix{<:Real}` at
-construction, so a `Function`-valued rate can never reach here) — the
-extension asserts this explicitly rather than silently relying on that
-upstream type constraint alone.
+this package needs), but every `AbstractLowering`'s generator is constant in
+practice — a [`PhaseType`](@ref)'s `S` is type-constrained to
+`<: AbstractMatrix{<:Real}` at construction, and a [`CTMC`](@ref)'s `Q` is
+runtime-validated the same way by `_validate_generator` — so a
+`Function`-valued rate should never reach here. The extension asserts this
+explicitly at the entry point rather than relying on either upstream
+guarantee alone.
 
 # Arguments
 
@@ -49,8 +51,9 @@ f!(du, built.u0, built.rates, 0.0)
 Not a live `@example`: AlgebraicPetri's own Catalyst weakdep extension caps
 Catalyst at a version incompatible with this package's own Catalyst
 extension, so the two cannot load in the same doctest session. This exact
-example is executed and checked in the isolated `test/algebraic_petri` test
-environment instead (see `test/algebraic_petri/petri.jl`).
+sequence — default `prefix`, `vectorfield`, and the `f!` call — is exercised
+by name in the isolated `test/algebraic_petri` test environment instead (see
+`test/algebraic_petri/petri.jl`).
 
 # See also
 

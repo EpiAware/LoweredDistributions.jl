@@ -53,6 +53,28 @@ end
     @test nt(a.petri_net) == nt(b.petri_net)
 end
 
+@testitem "petri_net docstring example: default prefix through vectorfield" tags=[:algebraic_petri] begin
+    using LoweredDistributions, Distributions, AlgebraicPetri
+
+    # The exact sequence in src/petri.jl's docstring example (default
+    # prefix, `Gamma(3.0, 1.5)`, vectorfield, a Dict `du`, and the `f!` call)
+    # — kept in sync with that example so the docstring's "exercised here"
+    # claim stays true.
+    built = petri_net(Gamma(3.0, 1.5))
+    f! = vectorfield(built.petri_net)
+    du = Dict(k => 0.0 for k in keys(built.u0))
+    f!(du, built.u0, built.rates, 0.0)
+    # Starting entirely in the first compartment: mass-action fires the
+    # state1 -> state2 transition at rate * u[state1] = rate, so state1 loses
+    # exactly what state2 gains; the two empty downstream compartments and
+    # the absorbed state have no instantaneous flow yet.
+    rate = compartment_stages(Gamma(3.0, 1.5))[1].rate
+    @test du[Symbol(:state, 1)] ≈ -rate
+    @test du[Symbol(:state, 2)] ≈ rate
+    @test du[Symbol(:state, 3)] ≈ 0.0
+    @test du[Symbol(:state, 4)] ≈ 0.0  # the absorbed compartment
+end
+
 @testitem "petri_net rejects a lowering with no positive-rate transitions" tags=[:algebraic_petri] begin
     using LoweredDistributions, AlgebraicPetri
 
