@@ -62,5 +62,8 @@ const QA_CONFIG = (
             prefixes = ("LoweredDistributions", "Catalyst")),
         (; name = :LoweredDistributionsSciMLBaseExt,
             triggers = ("SciMLBase",),
-            prefixes = ("LoweredDistributions", "SciMLBase")))
+            prefixes = ("LoweredDistributions", "SciMLBase")),
+        (; name = :LoweredDistributionsJumpProcessesExt,
+            triggers = ("JumpProcesses",),
+            prefixes = ("LoweredDistributions", "JumpProcesses")))
 )
