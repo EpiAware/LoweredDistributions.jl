@@ -62,6 +62,26 @@ end
     @test entry_rates ./ sum(entry_rates) ≈ chain.α
 end
 
+@testitem "linear_chain_reactions entry race is correct when phase 1 has α = 0" begin
+    using LoweredDistributions, Distributions, Catalyst
+
+    t = Catalyst.default_t()
+    @species From(t) To(t)
+    # A hand-built PhaseType where phase 1 is never entered (α[1] = 0) and
+    # phase 1's own rate differs from phase 2's — the entry-rate race must
+    # still reproduce α exactly, using μ = -S[1, 1] purely as an arbitrary
+    # shared positive scale (see the note in the Catalyst ext), not because
+    # phase 1 is itself entered.
+    α = [0.0, 1.0]
+    S = [-5.0 0.0; 0.0 -0.3]
+    chain = PhaseType(α, S)
+    built = linear_chain_reactions(chain, From, To)
+    @test length(built.entry) == 1           # only phase 2 has α_j > 0
+    @test built.entry[1].rate ≈ α[2] * (-S[1, 1])
+    # Phase 2 alone races (trivially wins with probability 1); the interesting
+    # check is that build succeeds and uses the α[1] = 0 case without error.
+end
+
 @testitem "reaction_system wraps linear_chain_reactions into a ReactionSystem" begin
     using LoweredDistributions, Distributions, Catalyst
 
