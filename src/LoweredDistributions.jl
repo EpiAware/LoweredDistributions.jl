@@ -16,14 +16,13 @@ Two branches populate the hierarchy:
 [`lower`](@ref) dispatches a `Distribution` to one of these; [`phase_type`](@ref)
 is the adaptive two-moment fit ([`ErlangChain`](@ref) for `c² ≤ 1`,
 [`PhaseType`](@ref) for `c² > 1`) `lower` uses for anything without an exact
-lowering. Three weak-dependency extensions turn any [`AbstractLowering`](@ref)
+lowering. Four weak-dependency extensions turn any [`AbstractLowering`](@ref)
 into a backend object: Catalyst.jl (reaction-network `Reaction`s via
 [`linear_chain_reactions`](@ref), or a full `ReactionSystem` via
 [`reaction_system`](@ref)), SciMLBase.jl (the linear forward-Kolmogorov
-`ODEProblem` via [`ode_problem`](@ref)), and AlgebraicPetri.jl
-(a `LabelledPetriNet` via [`petri_net`](@ref)); a JumpProcesses backend is a
-later wave, from the same
-[`AbstractLowering`](@ref)/[`AbstractChainTrick`](@ref) seam.
+`ODEProblem` via [`ode_problem`](@ref)), AlgebraicPetri.jl
+(a `LabelledPetriNet` via [`petri_net`](@ref)), and JumpProcesses.jl
+(an exact-simulation `JumpProblem` via [`jump_problem`](@ref)).
 
 ```@example
 using LoweredDistributions, Distributions
@@ -78,6 +77,7 @@ include("reaction_compartments.jl")
 include("generator.jl")
 include("ode.jl")
 include("petri.jl")
+include("jump.jl")
 
 export lower, AbstractLowering, AbstractChainTrick
 export ChainStage, compartment_stages
@@ -86,5 +86,6 @@ export CTMC, ctmc, transition_probability, state_index
 export linear_chain_reactions, reaction_system
 export ode_problem
 export petri_net
+export jump_problem
 
 end # module LoweredDistributions
