@@ -96,3 +96,32 @@ end
     end
     @test isapprox(mean(absorption_times), mean(d); atol = 0.15, rtol = 0.1)
 end
+
+@testitem "jump_problem's explicit-u0 draw is conditional on that phase, not the α mixture" begin
+    using LoweredDistributions, Distributions, JumpProcesses, Random, Statistics
+
+    # A genuine mixture-α PhaseType: fixing u0 to phase 1 alone must NOT
+    # reproduce the underlying Distribution's own mean (see the docstring's
+    # "Distributional interpretation" section) — it draws from the
+    # distribution CONDITIONAL on starting in phase 1, which differs from the
+    # mixture whenever the phases have different rates and α puts mass on
+    # more than one of them.
+    Random.seed!(5678)
+    d = Gamma(0.5, 1.0)                     # over-dispersed -> PhaseType
+    chain = lower(d)
+    @test chain isa PhaseType
+    @test !isapprox(maximum(chain.α), 1; atol = 1e-8)  # genuinely a mixture
+    prob = jump_problem(chain, (0.0, 500.0); u0 = [1, 0, 0])
+    n = 3000
+    absorbed_idx = length(chain.α) + 1
+    absorption_times = Vector{Float64}(undef, n)
+    for i in 1:n
+        sol = solve(prob, SSAStepper())
+        j = findfirst(u -> u[absorbed_idx] == 1, sol.u)
+        absorption_times[i] = sol.t[j]
+    end
+    # Comfortably outside the statistical noise band that the analogous
+    # deterministic-start CTMC test above uses (atol=0.15 at n=2000): this is
+    # a genuine bias from conditioning on one phase, not sampling variance.
+    @test !isapprox(mean(absorption_times), mean(d); atol = 0.15, rtol = 0.1)
+end
