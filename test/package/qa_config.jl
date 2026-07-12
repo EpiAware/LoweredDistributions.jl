@@ -14,12 +14,10 @@ const QA_CONFIG = (
     jet_env = joinpath(@__DIR__, "..", "jet"),
 
     # Per-check Aqua relaxations, e.g. (; ambiguities = false). Empty = all on.
-    # `stale_deps = false`: TODO — `LinearAlgebra`, `Random`, `Statistics` are
-    # `Project.toml` deps ahead of the concrete lowering representations
-    # (`ErlangChain`/`Coxian`/`PhaseType`/`CTMC`/`SemiMarkov`) that will use
-    # them; re-enable once that port lands and the stub module actually
-    # imports them.
-    aqua = (; stale_deps = false),
+    # `LinearAlgebra` (`_matrix_exp`'s BLAS `*`/identity) and `Statistics`
+    # (`phase_type`'s `mean`/`var`) are both genuinely used now the wave-1
+    # concrete lowering representations have landed, so `stale_deps` is on.
+    aqua = (;),
 
     # ExplicitImports `ignore`: symbols an extension legitimately imports
     # non-publicly. Tuple of Symbols, e.g. (:_internal_helper,).
@@ -46,5 +44,7 @@ const QA_CONFIG = (
     #      prefixes = ("MyPkg", "SomeTrigger"),
     #      expect_phantoms = false,    # true if a third party adds phantoms
     #      broken = false)             # true to quarantine a known ambiguity
-    extensions = ()
+    extensions = ((; name = :LoweredDistributionsCatalystExt,
+        triggers = ("Catalyst",),
+        prefixes = ("LoweredDistributions", "Catalyst")),)
 )
