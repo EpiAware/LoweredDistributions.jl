@@ -20,8 +20,12 @@ const QA_CONFIG = (
     aqua = (;),
 
     # ExplicitImports `ignore`: symbols an extension legitimately imports
-    # non-publicly. Tuple of Symbols, e.g. (:_internal_helper,).
-    ei_ignore = (),
+    # non-publicly. `_generator` is the internal `AbstractLowering -> (Q, u0)`
+    # dispatch both `LoweredDistributionsSciMLBaseExt` and
+    # `LoweredDistributionsAlgebraicPetriExt` import from core so they share
+    # one numeric dispatch point rather than duplicating it — never exported
+    # (it is not part of the public API), so it needs this allowance.
+    ei_ignore = (:_generator,),
 
     # Docstring `crossref_ignore`: upstream names docstrings link to via
     # `[`name`](@ref)`, e.g. (:pdf, :cdf, :logpdf).
@@ -44,6 +48,14 @@ const QA_CONFIG = (
     #      prefixes = ("MyPkg", "SomeTrigger"),
     #      expect_phantoms = false,    # true if a third party adds phantoms
     #      broken = false)             # true to quarantine a known ambiguity
+    # `LoweredDistributionsAlgebraicPetriExt` is deliberately NOT listed here:
+    # AlgebraicPetri 0.10's own Catalyst weakdep extension caps Catalyst at
+    # "13", incompatible with this package's own `Catalyst = "16"` — the two
+    # cannot resolve into one environment, so AlgebraicPetri lives in the
+    # isolated `test/algebraic_petri` environment instead (mirroring
+    # `test/ad`'s isolated-environment pattern), not this package's main test
+    # env this ambiguity check runs in. Checked manually in that isolated env
+    # instead (see the wave-2 AlgebraicPetri ext PR description).
     extensions = (
         (; name = :LoweredDistributionsCatalystExt,
             triggers = ("Catalyst",),

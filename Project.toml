@@ -10,14 +10,17 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
+AlgebraicPetri = "4f99eebe-17bf-4e98-b6a1-2c4f205a959b"
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
+LoweredDistributionsAlgebraicPetriExt = "AlgebraicPetri"
 LoweredDistributionsCatalystExt = "Catalyst"
 LoweredDistributionsSciMLBaseExt = "SciMLBase"
 
 [compat]
+AlgebraicPetri = "0.10"
 Catalyst = "16"
 Distributions = "0.25"
 DocStringExtensions = "0.9"
