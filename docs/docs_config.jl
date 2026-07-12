@@ -37,12 +37,35 @@ const FORCE_STUB_TUTORIALS = String[]
 
 # Regexes for URLs to skip during the (full-build) linkcheck, e.g. a page
 # published by a separate workflow that is not yet live.
-const LINKCHECK_IGNORE = Regex[]
+#
+# - the stable docs URL: published by the Documenter deploy workflow, which
+#   has not run yet for this brand-new package (no `gh-pages`/`stable` tag),
+#   so it 404s until the first real deploy.
+# - the GitHub Discussions URL: the managed README's standard "ask a
+#   question" link; Discussions is not yet enabled on this repository.
+const LINKCHECK_IGNORE = [
+    r"^https://epiaware\.org/LoweredDistributions\.jl/stable/?$",
+    r"^https://github\.com/EpiAware/LoweredDistributions\.jl/discussions/?$"
+]
 
 # README -> index.md link rewrites: `from => to` pairs applied line by line,
 # e.g. rewriting an absolute docs URL to an in-site `@ref` so links stay within
 # the built version.
-const INDEX_REWRITES = Pair{String, String}[]
+#
+# The managed README's "How to cite" section links to `CITATION.cff` with a
+# bare repo-relative link (`[`CITATION.cff`](CITATION.cff)`, written by
+# EpiAwarePackageTools' scaffold.jl). GitHub resolves that fine on the
+# repository page, but the docs site has no `CITATION.cff` under `docs/src/`,
+# so both Documenter's linkcheck and VitePress's own dead-link check reject it
+# (a `LINKCHECK_IGNORE` entry only silences the former, not the latter's
+# build-time failure). Rewritten here to the real GitHub blob URL, which both
+# checks resolve fine. This looks like a kit-wide gap (every
+# EpiAwarePackageTools-scaffolded package emits the same relative link), not
+# something specific to this package — tracked upstream rather than patched
+# at the template level here.
+const INDEX_REWRITES = [
+    "](CITATION.cff)" => "](https://github.com/EpiAware/LoweredDistributions.jl/blob/main/CITATION.cff)"
+]
 
 # Whether README ```julia blocks become runnable `@example readme` blocks on the
 # generated home page. Keep `true` when the README's examples are real, runnable
