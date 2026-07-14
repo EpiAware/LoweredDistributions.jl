@@ -36,11 +36,16 @@
 #     catchably here — it crashes the process (see `backend_skip_scenarios`).
 #
 #   - `adaptive_survival`: the same survival, but read off `lower(dist)`'s
-#     adaptive (Union-returning) dispatch, with NO ODE solve in the way. This
+#     adaptive (Union-returning) dispatch, with no ODE solve in the way. This
 #     is the issue #16 break in isolation: broken on Enzyme (forward and
 #     reverse), clean on ReverseDiff and both Mooncake modes — so the Union
 #     alone is fatal only to Enzyme, and `ode_survival`'s failures elsewhere
-#     are the ODE solve, not the Union.
+#     are the ODE solve, not the Union. Note this prices the type instability
+#     only: it uses `Gamma(0.5, ...)` (c² = 2), which always lands on the
+#     PhaseType branch, so the `ChainStage` `Float64` wall on the c² ≤ 1
+#     branch is not (and cannot be) exercised through `lower(dist)` — that
+#     branch is undifferentiable on every backend, which is why the canonical
+#     scenarios below cover it instead.
 #   - `canonical_erlang` / `canonical_h2`: the fix — the same survival through
 #     `lower(dist, PhaseType)`, the type-stable canonical lowering, on both
 #     sides of the `c²` branch. Clean on every backend, Enzyme included.
@@ -147,7 +152,7 @@ end
 
 # The phase-type survival P(T > t) = sum(α' exp(S t)), read straight off a
 # canonical (α, S) with the package's own matrix exponential. No ODE solver is
-# involved, so these scenarios isolate the LOWERING's differentiability from
+# involved, so these scenarios isolate the lowering's differentiability from
 # the separate "AD through an OrdinaryDiffEq solve" limitation the two
 # ode_survival scenarios above carry.
 function _pt_survival(pt, t)
@@ -310,7 +315,7 @@ SciMLSensitivity; that adoption is future work, tracked as a wave-3 follow-up.
 
 [`ADAPTIVE_SURVIVAL`](@ref) prices the Union on its own, with no ODE solver
 anywhere near it (the same survival, read off the canonical `(α, S)` with the
-package's own matrix exponential). It is broken on Enzyme — forward AND
+package's own matrix exponential). It is broken on Enzyme — forward and
 reverse — and clean on ReverseDiff and both Mooncake modes. That is a sharper
 result than `ODE_SURVIVAL` could give: the Union alone is fatal only to
 Enzyme, and `ODE_SURVIVAL`'s failure on ReverseDiff/Mooncake is the ODE solve,

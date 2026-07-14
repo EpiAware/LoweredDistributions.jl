@@ -53,7 +53,7 @@ end
 lower(d::Distribution) = phase_type(d)
 
 """
-    lower(dist::Distribution, ::Type{PhaseType})
+    lower(dist::Distribution, ::Type{PhaseType}; max_phases = 1_000)
 
 Lower `dist` to the canonical [`PhaseType`](@ref) `(α, S)` form, whatever its
 dispersion — the type-stable lowering, and the one to differentiate through.
@@ -79,11 +79,26 @@ method recomputes it from the moments (`k / mean(dist)`), which can differ in
 the last unit in the last place. The structure — phase count, chain shape,
 matched mean — is the same.
 
+What the canonical form does cost is memory. It holds an explicit `k × k`
+sub-generator, where the `c² ≤ 1` fit needs `k = round(1 / c²)` phases, so a
+tight (near-deterministic) delay asks for a very large dense matrix:
+`Normal(5, 0.001)` has `c² = 4e-8`, hence 25 million phases. An
+[`ErlangChain`](@ref) stores the same chain as a phase *count* and does not
+grow with `k` at all. `max_phases` caps the fit so that case raises an
+actionable error rather than exhausting memory; raise it if a long chain is
+genuinely wanted.
+
 # Arguments
 
   - `dist`: the `Distribution` to lower.
   - `PhaseType`: the [`PhaseType`](@ref) type itself, selecting the canonical
     form.
+
+# Keyword Arguments
+
+  - `max_phases`: the largest Erlang phase count to build a sub-generator for
+    (default `1_000`, a `1_000 × 1_000` matrix). Only the `c² ≤ 1` branch can
+    reach it; the `c² > 1` hyperexponential fit is always two phases.
 
 # Examples
 
@@ -100,8 +115,8 @@ lower(Exponential(2.0), PhaseType)    # PhaseType(1 phase), was a CTMC
   - [`lower`](@ref): the adaptive dispatch this canonicalises.
   - [`phase_type`](@ref): the two-moment fit both share.
 """
-function lower(d::Distribution, ::Type{PhaseType})
+function lower(d::Distribution, ::Type{PhaseType}; max_phases::Int = 1_000)
     m, scv = _two_moments(d, "lower(dist, PhaseType)")
-    scv <= 1 && return _erlang_phase_type(m, scv)
+    scv <= 1 && return _erlang_phase_type(m, scv, max_phases)
     return _hyperexponential_fit(m, scv)
 end

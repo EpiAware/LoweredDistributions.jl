@@ -60,10 +60,28 @@ end
 # moments (`k / m`) rather than read off an exact leaf's scale (`1 / θ`), so
 # for an exact Exponential/Erlang the two can differ in the last ulp; they
 # agree to floating-point tolerance, which the equivalence tests check.
-function _erlang_phase_type(m::Real, scv::Real)
+#
+# The one thing this form costs that `ErlangChain` does not: an explicit
+# `k x k` sub-generator. An `ErlangChain` stores the same chain in a single
+# `ChainStage` (`k` as an `Int`), so its memory does not grow with `k` at all,
+# whereas `S` here is dense and `k` scales as `1 / c²` — a tight delay
+# (`Normal(5, 0.001)`, `c² = 4e-8`) asks for 25 million phases and would
+# exhaust memory before it ever returned. `max_phases` turns that into an
+# actionable error instead of an `OutOfMemoryError`; a caller who genuinely
+# wants a huge chain can raise it.
+function _erlang_phase_type(m::Real, scv::Real, max_phases::Int)
     scv <= 1 || throw(ArgumentError(
         "an Erlang chain needs c² ≤ 1 (under-dispersed); got $scv"))
-    k = max(round(Int, inv(scv)), 1)
+    phases = inv(scv)
+    (isfinite(phases) && phases <= max_phases + 0.5) || throw(ArgumentError(
+        "the canonical Erlang fit needs $(isfinite(phases) ?
+            string(round(Int, phases)) : "infinitely many") phases for " *
+        "c² = $scv, above the max_phases = $max_phases limit. The " *
+        "sub-generator is dense (k x k), so this would allocate a matrix of " *
+        "that size squared. Raise `max_phases` if you really want it, or " *
+        "lower the distribution with `lower(dist)`, whose `ErlangChain` " *
+        "stores the phase count rather than the matrix."))
+    k = max(round(Int, phases), 1)
     rate = k / m
     T = typeof(rate)
     α = [j == 1 ? one(T) : zero(T) for j in 1:k]

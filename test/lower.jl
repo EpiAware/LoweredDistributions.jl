@@ -99,3 +99,53 @@ end
 
     @test_throws ArgumentError lower(Cauchy(0.0, 1.0), PhaseType)
 end
+
+@testitem "lower(dist, PhaseType) caps the phase count instead of exhausting memory" begin
+    using LoweredDistributions, Distributions
+
+    # A near-deterministic delay needs k = round(1 / c²) phases, and the
+    # canonical form holds a dense k x k sub-generator: Normal(5, 0.001) has
+    # c² = 4e-8, so it would ask for 25 million phases (and hundreds of
+    # terabytes) before returning. The cap turns that into an error naming the
+    # limit, rather than an OutOfMemoryError.
+    @test_throws ArgumentError lower(Normal(5.0, 0.001), PhaseType)
+    @test_throws ArgumentError lower(Gamma(1.0e6, 1.0e-6), PhaseType)
+
+    # The chain is still built when the caller opts into it.
+    tight = lower(Normal(5.0, 0.5), PhaseType; max_phases = 200)
+    @test length(tight.α) == 100          # c² = 0.01 -> 100 phases
+    @test size(tight.S) == (100, 100)
+
+    # ... and rejected when the cap is set below what the fit needs.
+    @test_throws ArgumentError lower(Normal(5.0, 0.5), PhaseType; max_phases = 50)
+
+    # The over-dispersed branch is always two phases, so the cap never bites.
+    @test length(lower(Gamma(0.5, 1.0), PhaseType; max_phases = 1).α) == 2
+end
+
+@testitem "lower(dist, PhaseType) keeps the distribution's element type" begin
+    using LoweredDistributions, Distributions, Test
+
+    # Type stability is not a Float64-only claim: the canonical form carries
+    # whatever element type the moments have, which is what lets an AD dual
+    # through (the ADFixtures canonical scenarios differentiate this path on
+    # every backend).
+    pt32 = @inferred lower(Gamma(3.0f0, 1.5f0), PhaseType)
+    @test pt32 isa PhaseType{Vector{Float32}, Matrix{Float32}}
+    @test eltype(pt32.S) === Float32
+end
+
+@testitem "a canonically-lowered PhaseType feeds the backends" begin
+    using LoweredDistributions, Distributions, SciMLBase, OrdinaryDiffEqTsit5
+
+    # The point of the canonical form is that it is still a lowering: it must
+    # drive the backend extensions exactly as the adaptive one does. The ODE's
+    # absorbed mass is the CDF of the distribution it came from.
+    d = Gamma(3.0, 1.5)
+    prob = ode_problem(lower(d, PhaseType), (0.0, 10.0))
+    sol = solve(prob, Tsit5(); abstol = 1e-10, reltol = 1e-10)
+    for t in (1.0, 4.0, 9.0)
+        @test sol(t)[end]≈cdf(d, t) atol=1e-6
+    end
+    @test sum(sol(6.0))≈1.0 atol=1e-8
+end
