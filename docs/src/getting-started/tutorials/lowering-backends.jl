@@ -148,8 +148,18 @@ jsol.u[end]        # the individual has ended in the absorbed compartment
 
 # The absorption time is the first time the last (absorbed) compartment holds
 # the individual.
+# A path that has not absorbed by the end of `tspan` has no absorption time at
+# all, so say that rather than return a wrong number: for this delay the span
+# is more than twenty means, but a heavier-tailed one would need a longer one.
 
-absorption_time(s) = s.t[findfirst(u -> u[end] == 1, s.u)]
+function absorption_time(s)
+    i = findfirst(u -> u[end] == 1, s.u)
+    i === nothing &&
+        error("the individual had not absorbed by the end of tspan; " *
+              "extend it and simulate again")
+    return s.t[i]
+end
+
 absorption_time(jsol)
 
 # One path is a single draw, so draw many and compare their mean and standard
@@ -176,21 +186,34 @@ indexes by species and transition name, not by position).
 This section runs in an isolated environment.
 AlgebraicPetri 0.10's own Catalyst extension caps Catalyst at version 13,
 which cannot resolve against this package's `Catalyst = "16"` compat, so
-AlgebraicPetri and Catalyst never coexist in one environment — the same split
-the test suite makes (`test/algebraic_petri`).
-The script below lives in `docs/algebraic_petri/demo.jl` and is run here in a
-subprocess against `docs/algebraic_petri/Project.toml`, so what you see is its
-real output, not a transcript.
+AlgebraicPetri and Catalyst never coexist in one environment — which is why
+the sections above, which need Catalyst, cannot also load AlgebraicPetri.
+The package keeps one isolated environment for exactly this, at
+`test/algebraic_petri`, and the demo below runs in it.
+
+If you are reading this as a downloaded script rather than building the docs,
+this section needs a checked-out copy of the repository (it resolves paths
+relative to the package source); the rest of the page runs anywhere.
 """
 
-petri_env = joinpath(pkgdir(LoweredDistributions), "docs", "algebraic_petri")
-petri_script = joinpath(petri_env, "demo.jl")
+petri_env = joinpath(pkgdir(LoweredDistributions), "test", "algebraic_petri")
+petri_script = joinpath(pkgdir(LoweredDistributions), "docs",
+    "algebraic_petri", "demo.jl")
+
+# The demo script itself, printed from the file that is about to be run, so the
+# page cannot drift from the code:
+
 print(read(petri_script, String))
 
-# Running it in its own environment:
+# And its real output, from a subprocess against that isolated environment.
+# `read` throws on a non-zero exit, so a broken demo fails the docs build
+# rather than silently printing nothing.
 
-run(`$(Base.julia_cmd()) --project=$petri_env -e "using Pkg; Pkg.instantiate()"`)
-print(read(`$(Base.julia_cmd()) --project=$petri_env $petri_script`, String))
+setup = `$(Base.julia_cmd()) --project=$petri_env -e "using Pkg; Pkg.instantiate()"`
+demo = `$(Base.julia_cmd()) --project=$petri_env $petri_script`
+
+read(setup, String) #hide
+print(read(demo, String))
 
 md"""
 The transitions are the chain's interior hops plus its exit, the rates are all

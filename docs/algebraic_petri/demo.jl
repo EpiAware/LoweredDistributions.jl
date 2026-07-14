@@ -1,3 +1,9 @@
+# Run by the getting-started tutorial in the isolated `test/algebraic_petri`
+# environment (AlgebraicPetri 0.10 caps Catalyst at 13, so it cannot share an
+# environment with this package's Catalyst 16 extension). Run it by hand with:
+#
+#   julia --project=test/algebraic_petri docs/algebraic_petri/demo.jl
+
 using LoweredDistributions, Distributions, AlgebraicPetri
 
 # The same delay the rest of the tutorial lowers: Gamma(3, 1.5), an exact

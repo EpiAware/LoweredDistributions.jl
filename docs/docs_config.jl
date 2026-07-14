@@ -17,9 +17,10 @@ const LIGHT_TUTORIALS = String[]
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
 #
 # `lowering-backends.jl` is heavy because it loads Catalyst, OrdinaryDiffEq,
-# and JumpProcesses, and shells out to the isolated `docs/algebraic_petri`
-# environment for its Petri-net section (AlgebraicPetri cannot share an
-# environment with Catalyst 16 — see `docs/algebraic_petri/Project.toml`).
+# and JumpProcesses, and shells out to the isolated `test/algebraic_petri`
+# environment for its Petri-net section (AlgebraicPetri caps Catalyst at 13,
+# so it cannot share an environment with this package's Catalyst 16
+# extension — see `test/algebraic_petri/Project.toml`).
 const HEAVY_TUTORIALS = ["lowering-backends.jl"]
 
 # Where the tutorial `.jl` sources and rendered `.md` pages live, relative to
