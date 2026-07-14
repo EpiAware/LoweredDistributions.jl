@@ -55,7 +55,7 @@ for the full walkthrough.
 
 <!-- standard-sections:start -->
 <!-- MANAGED by EpiAwarePackageTools.scaffold — do not edit between the
-     markers. These standard sections are re-rendered on every update;
+     markers. These standard sections are re-rendered on every scaffold_update;
      edit the package-owned sections outside them, or CITATION.cff. -->
 
 ## Contributing
@@ -64,7 +64,7 @@ We welcome contributions and new contributors! Please open an issue or pull requ
 
 ## How to cite
 
-If you use LoweredDistributions in your work, please cite it. Citation metadata lives in [`CITATION.cff`](CITATION.cff), which GitHub renders as a "Cite this repository" button on the repository page.
+If you use LoweredDistributions in your work, please cite it. Citation metadata lives in [`CITATION.cff`](https://github.com/EpiAware/LoweredDistributions.jl/blob/main/CITATION.cff), which GitHub renders as a "Cite this repository" button on the repository page.
 
 ## Code of conduct
 
