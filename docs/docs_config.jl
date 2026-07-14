@@ -60,23 +60,15 @@ const LINKCHECK_IGNORE = [
 # e.g. rewriting an absolute docs URL to an in-site `@ref` so links stay within
 # the built version.
 #
-# The managed README's "How to cite" section links to `CITATION.cff` with a
-# bare repo-relative link (`[`CITATION.cff`](CITATION.cff)`, written by
-# EpiAwarePackageTools' scaffold.jl). GitHub resolves that fine on the
-# repository page, but the docs site has no `CITATION.cff` under `docs/src/`,
-# so both Documenter's linkcheck and VitePress's own dead-link check reject it
-# (a `LINKCHECK_IGNORE` entry only silences the former, not the latter's
-# build-time failure). Rewritten here to the real GitHub blob URL, which both
-# checks resolve fine. This looks like a kit-wide gap (every
-# EpiAwarePackageTools-scaffolded package emits the same relative link), not
-# something specific to this package — tracked upstream rather than patched
-# at the template level here.
-#
 # The README's tutorial link points at the published site; on the generated
 # home page it should stay inside the built version, so it is rewritten to the
 # tutorial's own `@ref` anchor.
+#
+# The `CITATION.cff` rewrite this list used to carry is gone. It worked around
+# the managed README emitting a repo-relative link that the docs site cannot
+# resolve; the kit now emits the absolute GitHub blob URL itself, so the pair
+# would never match and the workaround is dead.
 const INDEX_REWRITES = [
-    "](CITATION.cff)" => "](https://github.com/EpiAware/LoweredDistributions.jl/blob/main/CITATION.cff)",
     "(https://epiaware.org/LoweredDistributions.jl/stable/getting-started/tutorials/lowering-backends)" => "(@ref lowering-backends)"
 ]
 
