@@ -10,13 +10,26 @@
 # `Catalyst = "16"` compat: the two cannot resolve into one environment (the
 # same reason `test/package/qa_config.jl` excludes the AlgebraicPetri
 # extension from the automated ambiguity check, and the reason the docs
-# tutorial's Petri section shells out to `docs/algebraic_petri`).
+# tutorial's Petri section runs in this environment rather than the docs one).
 #
-# This job is also the guard on that arrangement (#21): if a template sync,
-# a Dependabot bump, or a future AlgebraicPetri/Catalyst release changes what
-# resolves, this goes red rather than the isolated environment silently going
-# stale. If AlgebraicPetri ever supports Catalyst 16, the fix is to fold these
-# tests back into the main environment and delete this workflow.
+# The two jobs below are the guard on that arrangement (#21), and they guard
+# opposite failure directions:
+#
+#   - `algebraic-petri` catches the isolated environment BREAKING. It carries
+#     no Manifest, so every run resolves the environment afresh: a template
+#     sync, a compat edit, or an upstream release that stops resolving turns
+#     this red instead of leaving the environment quietly stale. (Dependabot
+#     is not the mechanism here — its Julia updater works on the workspace
+#     (`test`, `docs`), and `test/algebraic_petri` is not a workspace member,
+#     so it never opens a PR for these pins.)
+#
+#   - `isolation-still-needed` catches the isolated environment becoming
+#     UNNECESSARY — the case #21 explicitly names, which a passing test suite
+#     can never surface. It tries to resolve AlgebraicPetri and Catalyst 16
+#     together, and fails if that now succeeds, so the day AlgebraicPetri
+#     supports Catalyst 16 CI tells us to fold these tests back into the main
+#     environment and delete this workflow, rather than the isolation living
+#     on as scope creep nobody rechecks.
 name: AlgebraicPetri extension
 
 on:
@@ -29,6 +42,9 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   algebraic-petri:
@@ -44,3 +60,36 @@ jobs:
         run: julia --project=test/algebraic_petri -e 'using Pkg; Pkg.instantiate()'
       - name: Run the AlgebraicPetri extension tests
         run: julia --project=test/algebraic_petri test/algebraic_petri/runtests.jl
+
+  isolation-still-needed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Fail if AlgebraicPetri and Catalyst 16 now resolve together
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.activate(; temp = true)
+            resolved = try
+                Pkg.add([
+                    Pkg.PackageSpec(name = "AlgebraicPetri"),
+                    Pkg.PackageSpec(name = "Catalyst", version = "16")
+                ])
+                true
+            catch err
+                @info "AlgebraicPetri and Catalyst 16 still cannot resolve " *
+                      "together, so the isolated environment is still needed."
+                false
+            end
+            resolved && error(
+                "AlgebraicPetri now resolves alongside Catalyst 16. The " *
+                "isolated test/algebraic_petri environment (and this " *
+                "workflow) exist only because it could not — fold those " *
+                "tests back into the main test environment, re-enable the " *
+                "AlgebraicPetri extension in test/package/qa_config.jl, and " *
+                "delete this workflow. See issue #21.")'
