@@ -6,13 +6,28 @@
 # build machinery), so the kit is a docs dep too; until it is registered it is
 # pinned by git via `[sources]` (empty for the kit itself, which is the
 # package).
+#
+# The tutorial exercises three of the four backend extensions in this
+# environment (Catalyst, SciMLBase + OrdinaryDiffEqTsit5, JumpProcesses).
+# AlgebraicPetri is deliberately absent: AlgebraicPetri 0.10's own Catalyst
+# weakdep extension caps Catalyst at "13", which cannot resolve against this
+# package's `Catalyst = "16"` compat, so the two never coexist in one
+# environment. The tutorial's Petri section runs in the isolated
+# `docs/algebraic_petri` environment instead (the same split `test/` uses).
 [deps]
+Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
 EpiAwarePackageTools = "7aaea248-0d11-4a0d-a7dc-86da30abb951"
+JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 LoweredDistributions = "8539b7eb-0b85-40d0-a8a6-65093c3d0137"
+OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [sources]
 LoweredDistributions = {path = ".."}
@@ -22,7 +37,14 @@ LoweredDistributions = {path = ".."}
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
 
 [compat]
+Catalyst = "16"
+Distributions = "0.25"
 Documenter = "1"
 DocumenterCitations = "1"
 DocumenterVitepress = "0.3"
+JumpProcesses = "9"
 Literate = "2"
+OrdinaryDiffEqTsit5 = "1, 2"
+Random = "1"
+SciMLBase = "2, 3"
+Statistics = "1"
