@@ -34,14 +34,70 @@ phase_type(Gamma(0.5, 1.0))     # c² = 2 > 1   -> PhaseType (hyperexponential)
   - [`lower`](@ref): dispatches here for the over-dispersed case.
 """
 function phase_type(d::Distribution)
+    m, scv = _two_moments(d, "phase_type")
+    scv <= 1 && return ErlangChain(compartment_stages(d; moment_match = true))
+    return _hyperexponential_fit(m, scv)
+end
+
+# The `(mean, c²)` pair every two-moment fit reads, with the shared finite,
+# positive guard. `caller` names the entry point in the error message.
+function _two_moments(d::Distribution, caller::String)
     m = mean(d)
     v = var(d)
     (isfinite(m) && isfinite(v) && m > 0 && v > 0) || throw(ArgumentError(
-        "phase_type needs a finite positive mean and variance; got " *
+        "$caller needs a finite positive mean and variance; got " *
         "mean = $m, var = $v for $(typeof(d))."))
-    scv = v / m^2
-    scv <= 1 && return ErlangChain(compartment_stages(d; moment_match = true))
-    return _hyperexponential_fit(m, scv)
+    return m, v / m^2
+end
+
+# The canonical PhaseType of an Erlang chain fitted to `(m, scv)`, built
+# directly rather than via `compartment_stages`/`ErlangChain`: `ChainStage`
+# stores its rate in a concrete `Float64` field, which is deliberate for the
+# structural chain representation but is a wall for an AD dual. Going straight
+# to `(α, S)` keeps the element type of `m`, so this branch differentiates.
+# `k` is the same `round(1 / c²)` moment match `compartment_stages` performs,
+# so the fitted chain has the same shape. The rate is recomputed from the
+# moments (`k / m`) rather than read off an exact leaf's scale (`1 / θ`), so
+# for an exact Exponential/Erlang the two can differ in the last ulp; they
+# agree to floating-point tolerance, which the equivalence tests check.
+#
+# The one thing this form costs that `ErlangChain` does not: an explicit
+# `k x k` sub-generator. An `ErlangChain` stores the same chain in a single
+# `ChainStage` (`k` as an `Int`), so its memory does not grow with `k` at all,
+# whereas `S` here is dense and `k` scales as `1 / c²` — a tight delay
+# (`Normal(5, 0.001)`, `c² = 4e-8`) asks for 25 million phases and would
+# exhaust memory before it ever returned. `max_phases` turns that into an
+# actionable error instead of an `OutOfMemoryError`; a caller who genuinely
+# wants a huge chain can raise it.
+function _erlang_phase_type(m::Real, scv::Real, max_phases::Int)
+    scv <= 1 || throw(ArgumentError(
+        "an Erlang chain needs c² ≤ 1 (under-dispersed); got $scv"))
+    phases = inv(scv)
+    (isfinite(phases) && phases <= max_phases + 0.5) || throw(ArgumentError(
+        "the canonical Erlang fit needs $(isfinite(phases) ?
+            string(round(Int, phases)) : "infinitely many") phases for " *
+        "c² = $scv, above the max_phases = $max_phases limit. The " *
+        "sub-generator is dense (k x k), so this would allocate a matrix of " *
+        "that size squared. Raise `max_phases` if you really want it, or " *
+        "lower the distribution with `lower(dist)`, whose `ErlangChain` " *
+        "stores the phase count rather than the matrix."))
+    k = max(round(Int, phases), 1)
+    rate = k / m
+    T = typeof(rate)
+    # `zeros` + `setindex!` rather than a comprehension: on the Julia LTS,
+    # inference does not prove the comprehension's element type, so `α` comes
+    # back as `AbstractVector` and the whole method infers
+    # `PhaseType{A, Matrix{T}} where A` — type-UNstable on exactly the release
+    # the package supports and the AD backends care about. Building the array
+    # explicitly pins `Vector{T}` on every supported version.
+    α = zeros(T, k)
+    α[1] = one(T)
+    S = zeros(T, k, k)
+    for i in 1:k
+        S[i, i] = -rate
+        i < k && (S[i, i + 1] = rate)
+    end
+    return PhaseType(α, S)
 end
 
 # The balanced-means two-moment hyperexponential fit (Whitt 1982): exact for
