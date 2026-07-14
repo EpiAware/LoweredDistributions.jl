@@ -71,11 +71,13 @@ field. This method always returns the same concrete type and never touches
 
 The fit is the same two-moment fit `lower` performs — an Erlang chain of
 `round(1 / c²)` phases for `c² ≤ 1`, the balanced-means hyperexponential for
-`c² > 1` — so the resulting phase-type is numerically identical to
-`PhaseType(lower(dist))` wherever that conversion exists. It differs only in
-being built straight into `(α, S)`, never through
-[`compartment_stages`](@ref)'s `ChainStage`, whose `Float64` rate field cannot
-carry an AD dual.
+`c² > 1` — so the phase-type agrees with `PhaseType(lower(dist))` to
+floating-point tolerance wherever that conversion exists. It is not always
+bit-identical: for an exact Exponential/Erlang leaf, `compartment_stages`
+reads the rate straight off the distribution's scale (`1 / θ`), while this
+method recomputes it from the moments (`k / mean(dist)`), which can differ in
+the last unit in the last place. The structure — phase count, chain shape,
+matched mean — is the same.
 
 # Arguments
 

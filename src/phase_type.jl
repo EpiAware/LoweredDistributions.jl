@@ -56,7 +56,10 @@ end
 # structural chain representation but is a wall for an AD dual. Going straight
 # to `(α, S)` keeps the element type of `m`, so this branch differentiates.
 # `k` is the same `round(1 / c²)` moment match `compartment_stages` performs,
-# so the fitted chain is identical.
+# so the fitted chain has the same shape. The rate is recomputed from the
+# moments (`k / m`) rather than read off an exact leaf's scale (`1 / θ`), so
+# for an exact Exponential/Erlang the two can differ in the last ulp; they
+# agree to floating-point tolerance, which the equivalence tests check.
 function _erlang_phase_type(m::Real, scv::Real)
     scv <= 1 || throw(ArgumentError(
         "an Erlang chain needs c² ≤ 1 (under-dispersed); got $scv"))
