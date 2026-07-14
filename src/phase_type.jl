@@ -34,14 +34,42 @@ phase_type(Gamma(0.5, 1.0))     # c² = 2 > 1   -> PhaseType (hyperexponential)
   - [`lower`](@ref): dispatches here for the over-dispersed case.
 """
 function phase_type(d::Distribution)
+    m, scv = _two_moments(d, "phase_type")
+    scv <= 1 && return ErlangChain(compartment_stages(d; moment_match = true))
+    return _hyperexponential_fit(m, scv)
+end
+
+# The `(mean, c²)` pair every two-moment fit reads, with the shared finite,
+# positive guard. `caller` names the entry point in the error message.
+function _two_moments(d::Distribution, caller::String)
     m = mean(d)
     v = var(d)
     (isfinite(m) && isfinite(v) && m > 0 && v > 0) || throw(ArgumentError(
-        "phase_type needs a finite positive mean and variance; got " *
+        "$caller needs a finite positive mean and variance; got " *
         "mean = $m, var = $v for $(typeof(d))."))
-    scv = v / m^2
-    scv <= 1 && return ErlangChain(compartment_stages(d; moment_match = true))
-    return _hyperexponential_fit(m, scv)
+    return m, v / m^2
+end
+
+# The canonical PhaseType of an Erlang chain fitted to `(m, scv)`, built
+# directly rather than via `compartment_stages`/`ErlangChain`: `ChainStage`
+# stores its rate in a concrete `Float64` field, which is deliberate for the
+# structural chain representation but is a wall for an AD dual. Going straight
+# to `(α, S)` keeps the element type of `m`, so this branch differentiates.
+# `k` is the same `round(1 / c²)` moment match `compartment_stages` performs,
+# so the fitted chain is identical.
+function _erlang_phase_type(m::Real, scv::Real)
+    scv <= 1 || throw(ArgumentError(
+        "an Erlang chain needs c² ≤ 1 (under-dispersed); got $scv"))
+    k = max(round(Int, inv(scv)), 1)
+    rate = k / m
+    T = typeof(rate)
+    α = [j == 1 ? one(T) : zero(T) for j in 1:k]
+    S = zeros(T, k, k)
+    for i in 1:k
+        S[i, i] = -rate
+        i < k && (S[i, i + 1] = rate)
+    end
+    return PhaseType(α, S)
 end
 
 # The balanced-means two-moment hyperexponential fit (Whitt 1982): exact for

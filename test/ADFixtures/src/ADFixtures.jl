@@ -35,10 +35,21 @@
 #     out of leaf scope for this wave. Enzyme forward doesn't even error
 #     catchably here — it crashes the process (see `backend_skip_scenarios`).
 #
+#   - `adaptive_survival`: the same survival, but read off `lower(dist)`'s
+#     adaptive (Union-returning) dispatch, with NO ODE solve in the way. This
+#     is the issue #16 break in isolation: broken on Enzyme (forward and
+#     reverse), clean on ReverseDiff and both Mooncake modes — so the Union
+#     alone is fatal only to Enzyme, and `ode_survival`'s failures elsewhere
+#     are the ODE solve, not the Union.
+#   - `canonical_erlang` / `canonical_h2`: the fix — the same survival through
+#     `lower(dist, PhaseType)`, the type-stable canonical lowering, on both
+#     sides of the `c²` branch. Clean on every backend, Enzyme included.
+#
 # `compartment_stages`/`ErlangChain` are NOT included: `ChainStage.rate` is a
 # concrete `Float64` field (ported as-is from CensoredDistributions.jl), so
 # that lowering is intentionally non-differentiable structural data, not a
-# differentiated path.
+# differentiated path — which is exactly why `lower(dist, PhaseType)` builds
+# `(α, S)` directly instead of going through it.
 module ADFixtures
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
@@ -59,6 +70,9 @@ const MATRIX_EXP_DIRECT = "matrix_exp/transition_probability direct gradient"
 const PHASE_TYPE_H2 = "phase_type hyperexponential (α, S) gradient"
 const ODE_SURVIVAL = "ode_problem solve survival gradient (PhaseType)"
 const ODE_SURVIVAL_DIRECT = "ode_problem solve survival gradient (PhaseType, direct)"
+const ADAPTIVE_SURVIVAL = "lower(dist) adaptive-dispatch survival gradient"
+const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
+const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -131,6 +145,40 @@ function _ode_survival_direct(θ)
     return sum(sol.u[end][1:2])
 end
 
+# The phase-type survival P(T > t) = sum(α' exp(S t)), read straight off a
+# canonical (α, S) with the package's own matrix exponential. No ODE solver is
+# involved, so these scenarios isolate the LOWERING's differentiability from
+# the separate "AD through an OrdinaryDiffEq solve" limitation the two
+# ode_survival scenarios above carry.
+function _pt_survival(pt, t)
+    return sum(transpose(pt.α) * LoweredDistributions._matrix_exp(pt.S .* t))
+end
+
+# The adaptive dispatch on the differentiated path: `lower(Gamma(...))` is
+# statically `Union{ErlangChain, PhaseType}` even though this shape (0.5,
+# c² = 2 > 1) always takes the PhaseType branch at runtime. The Union is the
+# whole point of the scenario — this is the break issue #16 registered,
+# reproduced without an ODE solve in the way.
+function _adaptive_survival(θ)
+    pt = PhaseType(lower(Gamma(0.5, exp(θ[1]))))
+    return _pt_survival(pt, 5.0)
+end
+
+# The type-stable twin: `lower(dist, PhaseType)` always returns the same
+# concrete type, so the same survival gradient is available on every backend.
+# Shape 3 (c² = 1/3 ≤ 1) takes the Erlang-chain branch, which the adaptive
+# dispatch routes through `ChainStage`'s Float64 rate field and so cannot
+# differentiate at all; the canonical form builds (α, S) directly.
+function _canonical_erlang_survival(θ)
+    return _pt_survival(lower(Gamma(3.0, exp(θ[1])), PhaseType), 5.0)
+end
+
+# The same canonical entry point on the over-dispersed (c² = 2 > 1) branch,
+# so both sides of the fit's runtime branch are covered.
+function _canonical_h2_survival(θ)
+    return _pt_survival(lower(Gamma(0.5, exp(θ[1])), PhaseType), 5.0)
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -171,6 +219,27 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = ODE_SURVIVAL_DIRECT,
             res1 = with_reference ? _reference(_ode_survival_direct, θ5, ()) :
                    nothing))
+
+    θ6 = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_adaptive_survival, θ6;
+            name = ADAPTIVE_SURVIVAL,
+            res1 = with_reference ? _reference(_adaptive_survival, θ6, ()) :
+                   nothing))
+
+    θ7 = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_canonical_erlang_survival, θ7;
+            name = CANONICAL_ERLANG,
+            res1 = with_reference ?
+                   _reference(_canonical_erlang_survival, θ7, ()) : nothing))
+
+    θ8 = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_canonical_h2_survival, θ8;
+            name = CANONICAL_H2,
+            res1 = with_reference ?
+                   _reference(_canonical_h2_survival, θ8, ()) : nothing))
 
     return out
 end
@@ -238,17 +307,37 @@ problem from ODE-solve differentiation (which itself is unreliable on
 anything but ForwardDiff, regardless of the Union). Differentiating
 `ode_problem(dist_lowering, tspan)` on a non-ForwardDiff backend needs
 SciMLSensitivity; that adoption is future work, tracked as a wave-3 follow-up.
+
+[`ADAPTIVE_SURVIVAL`](@ref) prices the Union on its own, with no ODE solver
+anywhere near it (the same survival, read off the canonical `(α, S)` with the
+package's own matrix exponential). It is broken on Enzyme — forward AND
+reverse — and clean on ReverseDiff and both Mooncake modes. That is a sharper
+result than `ODE_SURVIVAL` could give: the Union alone is fatal only to
+Enzyme, and `ODE_SURVIVAL`'s failure on ReverseDiff/Mooncake is the ODE solve,
+not the Union. Issue #16's "breaks AD on all but ForwardDiff" therefore
+conflated the two; the honest statement is "breaks Enzyme, and is a latent
+hazard everywhere else".
+
+[`CANONICAL_ERLANG`](@ref) and [`CANONICAL_H2`](@ref) are the fix, and are
+clean on every backend including both Enzyme modes: `lower(dist, PhaseType)`
+returns one concrete type on both sides of the `c²` branch, and builds `(α,
+S)` directly rather than through `ChainStage`'s `Float64` rate field — so the
+`c² ≤ 1` Erlang branch, which the adaptive dispatch cannot differentiate at
+all, differentiates here too.
 """
 function backend_broken_scenarios()
     ctmc_builder_broken = Set{String}([CTMC_BUILDER])
     ode_broken = Set{String}([ODE_SURVIVAL, ODE_SURVIVAL_DIRECT])
+    # The Union return type on its own: Enzyme-only (see the note above).
+    union_broken = Set{String}([ADAPTIVE_SURVIVAL])
     return Dict{String, Set{String}}(
         "ForwardDiff" => Set{String}(),
         "ReverseDiff (tape)" => copy(ode_broken),
         "Mooncake reverse" => copy(ode_broken),
         "Mooncake forward" => copy(ode_broken),
-        "Enzyme reverse" => union(ctmc_builder_broken, ode_broken),
-        "Enzyme forward" => union(ctmc_builder_broken, Set{String}([ODE_SURVIVAL]))
+        "Enzyme reverse" => union(ctmc_builder_broken, ode_broken, union_broken),
+        "Enzyme forward" => union(ctmc_builder_broken,
+            Set{String}([ODE_SURVIVAL]), union_broken)
     )
 end
 
