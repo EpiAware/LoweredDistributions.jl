@@ -15,7 +15,13 @@ const LIGHT_TUTORIALS = String[]
 
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) are each
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
-const HEAVY_TUTORIALS = String[]
+#
+# `lowering-backends.jl` is heavy because it loads Catalyst, OrdinaryDiffEq,
+# and JumpProcesses, and shells out to the isolated `test/algebraic_petri`
+# environment for its Petri-net section (AlgebraicPetri caps Catalyst at 13,
+# so it cannot share an environment with this package's Catalyst 16
+# extension — see `test/algebraic_petri/Project.toml`).
+const HEAVY_TUTORIALS = ["lowering-backends.jl"]
 
 # Where the tutorial `.jl` sources and rendered `.md` pages live, relative to
 # `docs/src`.
@@ -25,7 +31,9 @@ const TUTORIALS_SUBDIR = joinpath("getting-started", "tutorials")
 # heading should preserve the tutorial's `@id` (e.g.
 # `"# [Title](@id my-anchor)"`) so cross-references from other pages still
 # resolve in a fast build.
-const TUTORIAL_STUBS = Pair{String, String}[]
+const TUTORIAL_STUBS = [
+    "lowering-backends.md" => "# [Lowering a distribution to a dynamical system](@id lowering-backends)"
+]
 
 # Heavy tutorials that always render from their `TUTORIAL_STUBS` heading and
 # never execute, independent of `--skip-notebooks` — the escape hatch for a
@@ -63,8 +71,13 @@ const LINKCHECK_IGNORE = [
 # EpiAwarePackageTools-scaffolded package emits the same relative link), not
 # something specific to this package — tracked upstream rather than patched
 # at the template level here.
+#
+# The README's tutorial link points at the published site; on the generated
+# home page it should stay inside the built version, so it is rewritten to the
+# tutorial's own `@ref` anchor.
 const INDEX_REWRITES = [
-    "](CITATION.cff)" => "](https://github.com/EpiAware/LoweredDistributions.jl/blob/main/CITATION.cff)"
+    "](CITATION.cff)" => "](https://github.com/EpiAware/LoweredDistributions.jl/blob/main/CITATION.cff)",
+    "(https://epiaware.org/LoweredDistributions.jl/stable/getting-started/tutorials/lowering-backends)" => "(@ref lowering-backends)"
 ]
 
 # Whether README ```julia blocks become runnable `@example readme` blocks on the

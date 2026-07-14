@@ -15,22 +15,38 @@ onto a backend-agnostic dynamical-systems representation._
 
 ## Why LoweredDistributions?
 
-- A single entry point, `lower`, for turning a `Distribution` into a
-  dynamical-systems representation usable by ODE/CTMC-based backends.
-- A locked, minimal type hierarchy (`AbstractLowering`,
-  `AbstractChainTrick`) that concrete phase-type and non-phase-type
-  representations subtype.
+A delay distribution and a compartmental model are two views of the same
+thing.
+`Gamma(3, 1.5)` is a waiting time; it is also three exponential compartments
+in series, each left at rate `1/1.5`.
 
-This package is currently a skeleton: the concrete lowering
-representations are ported next; see the source for the full plan.
+- A single entry point, `lower`, turns a `Distribution` into a
+  backend-agnostic dynamical-systems representation: an `ErlangChain`,
+  `Coxian`, or `PhaseType` (all convertible to the canonical `PhaseType(α, S)`
+  view), or a `CTMC` generator.
+- Distributions with no exact chain representation are fitted by matching
+  their first two moments, covering both the under-dispersed (`c² ≤ 1`, an
+  Erlang chain) and over-dispersed (`c² > 1`, a hyperexponential mixture)
+  cases.
+- Four weak-dependency extensions turn any lowering into a backend object: a
+  Catalyst `ReactionSystem` (`reaction_system`), a SciMLBase `ODEProblem`
+  (`ode_problem`), an AlgebraicPetri `LabelledPetriNet` (`petri_net`), and a
+  JumpProcesses `JumpProblem` for exact stochastic simulation
+  (`jump_problem`).
 
 ## Getting started
 
-See [documentation](https://epiaware.org/LoweredDistributions.jl/stable/) for a full walkthrough.
-
 ```julia
-using LoweredDistributions
+using LoweredDistributions, Distributions
+
+lower(Gamma(3.0, 1.5))
 ```
+
+The [tutorial](https://epiaware.org/LoweredDistributions.jl/stable/getting-started/tutorials/lowering-backends)
+takes one delay through all four backends and checks each against the
+distribution it came from.
+See the [documentation](https://epiaware.org/LoweredDistributions.jl/stable/)
+for the full walkthrough.
 
 ## Where to learn more
 

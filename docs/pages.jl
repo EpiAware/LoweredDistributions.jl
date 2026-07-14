@@ -14,6 +14,7 @@ pages = [
     # package grows.
     "Getting started" => [
         "Overview" => "getting-started/index.md",
+        "Lowering a distribution to a dynamical system" => "getting-started/tutorials/lowering-backends.md",
         "Customising your docs" => "getting-started/customising.md"
     ],
     "API reference" => [
