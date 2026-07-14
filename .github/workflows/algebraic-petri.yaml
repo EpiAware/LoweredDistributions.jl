@@ -1,0 +1,46 @@
+# PACKAGE-OWNED — not part of the kit's managed workflow set.
+#
+# Runs the AlgebraicPetri extension's tests, which live in their own
+# environment (`test/algebraic_petri/`) and so are excluded from the main
+# `Pkg.test()` run the managed Test workflow drives — without this job they
+# never run in CI at all.
+#
+# The isolation exists because AlgebraicPetri 0.10's own Catalyst weakdep
+# extension caps Catalyst at "13", incompatible with this package's own
+# `Catalyst = "16"` compat: the two cannot resolve into one environment (the
+# same reason `test/package/qa_config.jl` excludes the AlgebraicPetri
+# extension from the automated ambiguity check, and the reason the docs
+# tutorial's Petri section shells out to `docs/algebraic_petri`).
+#
+# This job is also the guard on that arrangement (#21): if a template sync,
+# a Dependabot bump, or a future AlgebraicPetri/Catalyst release changes what
+# resolves, this goes red rather than the isolated environment silently going
+# stale. If AlgebraicPetri ever supports Catalyst 16, the fix is to fold these
+# tests back into the main environment and delete this workflow.
+name: AlgebraicPetri extension
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  algebraic-petri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v3
+      - name: Instantiate the isolated AlgebraicPetri environment
+        run: julia --project=test/algebraic_petri -e 'using Pkg; Pkg.instantiate()'
+      - name: Run the AlgebraicPetri extension tests
+        run: julia --project=test/algebraic_petri test/algebraic_petri/runtests.jl
