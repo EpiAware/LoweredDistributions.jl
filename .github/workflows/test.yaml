@@ -15,8 +15,18 @@ concurrency:
 jobs:
   test:
     uses: EpiAware/.github/.github/workflows/tests.yml@dc919e0d1674c16d1518df07eda5ee0be09b47e2
+    # Package-owned override, preserved across scaffold_update (kit #73). The
+    # package's Julia floor is 1.11, so `lts` (1.10) is dropped from the
+    # reusable's default matrix rather than run against a version this package
+    # no longer claims to support.
+    with:
+      julia_versions: '["1", "pre"]'
     secrets: inherit  # pragma: allowlist secret
 
   downgrade-compat:
     uses: EpiAware/.github/.github/workflows/downgrade.yml@dc919e0d1674c16d1518df07eda5ee0be09b47e2
+    # The oldest Julia the package supports, so the downgrade run resolves
+    # against the floor it actually claims.
+    with:
+      julia_version: '1.11'
     secrets: inherit  # pragma: allowlist secret
