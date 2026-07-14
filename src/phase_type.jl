@@ -84,7 +84,14 @@ function _erlang_phase_type(m::Real, scv::Real, max_phases::Int)
     k = max(round(Int, phases), 1)
     rate = k / m
     T = typeof(rate)
-    α = [j == 1 ? one(T) : zero(T) for j in 1:k]
+    # `zeros` + `setindex!` rather than a comprehension: on the Julia LTS,
+    # inference does not prove the comprehension's element type, so `α` comes
+    # back as `AbstractVector` and the whole method infers
+    # `PhaseType{A, Matrix{T}} where A` — type-UNstable on exactly the release
+    # the package supports and the AD backends care about. Building the array
+    # explicitly pins `Vector{T}` on every supported version.
+    α = zeros(T, k)
+    α[1] = one(T)
     S = zeros(T, k, k)
     for i in 1:k
         S[i, i] = -rate
