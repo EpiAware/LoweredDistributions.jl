@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   test:
-    uses: EpiAware/.github/.github/workflows/tests.yml@dc919e0d1674c16d1518df07eda5ee0be09b47e2
+    uses: EpiAware/.github/.github/workflows/tests.yml@6fcdcde033ec670ac3832b239427fd2ded591bbc
     # Package-owned override, preserved across scaffold_update (kit #73). The
     # package's Julia floor is 1.11, so `lts` (1.10) is dropped from the
     # reusable's default matrix rather than run against a version this package
