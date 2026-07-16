@@ -96,9 +96,22 @@ genuinely wanted.
 
 # Keyword Arguments
 
+  - `phases`: fix the Erlang phase count instead of deriving it from the
+    distribution's dispersion. With `phases = k` the result is always a
+    `k`-stage Erlang whose rate matches `mean(dist)` (`rate = k / mean`), so the
+    phase count — and hence the `(α, S)` dimension — is **independent of the
+    distribution's value**. This is the AD-stable path for fitting under
+    Turing: the number of compartments is a discrete quantity you cannot
+    differentiate through, so fix it and infer only the (continuous) rate; the
+    result then differentiates on every backend, Enzyme included. The default
+    (`nothing`) keeps the adaptive two-moment fit, whose phase count
+    `round(1 / c²)` *does* depend on the value and so steps discontinuously as
+    a parameter crosses a rounding boundary. When set, `phases` overrides
+    `max_phases`.
   - `max_phases`: the largest Erlang phase count to build a sub-generator for
     (default `1_000`, a `1_000 × 1_000` matrix). Only the `c² ≤ 1` branch can
-    reach it; the `c² > 1` hyperexponential fit is always two phases.
+    reach it; the `c² > 1` hyperexponential fit is always two phases. Ignored
+    when `phases` is set.
 
 # Examples
 
@@ -107,6 +120,7 @@ using LoweredDistributions, Distributions
 
 lower(Gamma(3.0, 1.5), PhaseType)     # PhaseType(3 phases), was an ErlangChain
 lower(Gamma(0.5, 1.0), PhaseType)     # PhaseType(2 phases), c² = 2 > 1
+lower(Gamma(3.0, 1.5), PhaseType; phases = 5)   # a fixed 5-phase Erlang
 lower(Exponential(2.0), PhaseType)    # PhaseType(1 phase), was a CTMC
 ```
 
@@ -115,7 +129,13 @@ lower(Exponential(2.0), PhaseType)    # PhaseType(1 phase), was a CTMC
   - [`lower`](@ref): the adaptive dispatch this canonicalises.
   - [`phase_type`](@ref): the two-moment fit both share.
 """
-function lower(d::Distribution, ::Type{PhaseType}; max_phases::Int = 1_000)
+function lower(d::Distribution, ::Type{PhaseType};
+        phases::Union{Nothing, Int} = nothing, max_phases::Int = 1_000)
+    if phases !== nothing
+        phases >= 1 || throw(ArgumentError(
+            "phases must be a positive integer; got $phases"))
+        return _fixed_erlang_phase_type(mean(d), phases)
+    end
     m, scv = _two_moments(d, "lower(dist, PhaseType)")
     scv <= 1 && return _erlang_phase_type(m, scv, max_phases)
     return _hyperexponential_fit(m, scv)

@@ -149,3 +149,29 @@ end
     end
     @test sum(sol(6.0))≈1.0 atol=1e-8
 end
+
+@testitem "lower(dist, PhaseType; phases) fixes the compartment count" begin
+    using LoweredDistributions, Distributions, LinearAlgebra
+
+    ptmean(pt) = -sum(transpose(pt.α) * inv(pt.S))
+
+    # `phases` fixes k and matches the mean; the k-stage Erlang has k phases and
+    # mean k / rate = mean(dist).
+    p = lower(Gamma(3.0, 1.5), PhaseType; phases = 5)
+    @test p isa PhaseType{Vector{Float64}, Matrix{Float64}}
+    @test length(p.α) == 5
+    @test ptmean(p) ≈ mean(Gamma(3.0, 1.5))
+
+    # The count is independent of the distribution's own dispersion: a Gamma the
+    # adaptive fit would give a different k, an Exponential, and a near-
+    # degenerate Normal (whose adaptive fit would ask for 25M phases) all give
+    # exactly the requested count.
+    @test length(lower(Gamma(0.5, 1.0), PhaseType; phases = 5).α) == 5
+    @test length(lower(Exponential(2.0), PhaseType; phases = 5).α) == 5
+    @test length(lower(Normal(5.0, 0.001), PhaseType; phases = 3).α) == 3
+
+    # A positive integer is required, and the fixed-count path is type-stable.
+    @test_throws ArgumentError lower(Gamma(3.0, 1.5), PhaseType; phases = 0)
+    @test (@inferred lower(Gamma(3.0, 1.5), PhaseType; phases = 4)) isa
+          PhaseType{Vector{Float64}, Matrix{Float64}}
+end
