@@ -14,17 +14,10 @@ pages = [
     # package grows.
     "Getting started" => [
         "Overview" => "getting-started/index.md",
-        "Lowering a distribution to a dynamical system" => "getting-started/tutorials/lowering-backends.md",
-        "Customising your docs" => "getting-started/customising.md"
+        "Lowering a distribution to a dynamical system" => "getting-started/tutorials/lowering-backends.md"
     ],
     "API reference" => [
         "Public API" => "lib/public.md",
         "Internal API" => "lib/internals.md"
-    ],
-    # Maintainer-facing reference: how the kit's managed infrastructure and
-    # template sync keep this repository to the shared standard. Kept out of
-    # Getting started so a new user's first section is not maintainer noise.
-    "Development" => [
-        "Infrastructure and template sync" => "getting-started/infrastructure.md"
     ]
 ]
