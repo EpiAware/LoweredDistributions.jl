@@ -11,17 +11,27 @@
 #
 # Light tutorials emit `@example` blocks that Documenter runs in-process; keep
 # cheap tutorials here.
-const LIGHT_TUTORIALS = String[]
+#
+# `lowering-backends.jl` is the lowering overview: it only loads
+# LoweredDistributions and Distributions to `lower` a few delays and show the
+# canonical `PhaseType`, so it runs in-process. The per-backend pages that load
+# a heavy backend are `HEAVY_TUTORIALS` below.
+const LIGHT_TUTORIALS = ["lowering-backends.jl"]
 
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) are each
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
 #
-# `lowering-backends.jl` is heavy because it loads Catalyst, OrdinaryDiffEq,
-# and JumpProcesses, and shells out to the isolated `test/algebraic_petri`
-# environment for its Petri-net section (AlgebraicPetri caps Catalyst at 13,
-# so it cannot share an environment with this package's Catalyst 16
-# extension — see `test/algebraic_petri/Project.toml`).
-const HEAVY_TUTORIALS = ["lowering-backends.jl"]
+# One page per backend, each loading its own backend package: SciMLBase +
+# OrdinaryDiffEqTsit5, Catalyst, JumpProcesses, and AlgebraicPetri (which shells
+# out to the isolated `test/algebraic_petri` environment). Because each runs in
+# its own subprocess, the Catalyst page and the AlgebraicPetri page never share
+# an environment.
+const HEAVY_TUTORIALS = [
+    "backend-sciml.jl",
+    "backend-catalyst.jl",
+    "backend-jump.jl",
+    "backend-petri.jl"
+]
 
 # Where the tutorial `.jl` sources and rendered `.md` pages live, relative to
 # `docs/src`.
@@ -30,9 +40,13 @@ const TUTORIALS_SUBDIR = joinpath("getting-started", "tutorials")
 # Fast-build stubs (`--skip-notebooks`): `"file.md" => "# Heading"` pairs. The
 # heading should preserve the tutorial's `@id` (e.g.
 # `"# [Title](@id my-anchor)"`) so cross-references from other pages still
-# resolve in a fast build.
+# resolve in a fast build. Only the heavy per-backend pages are stubbed; the
+# light overview always renders (and carries the `lowering-backends` anchor).
 const TUTORIAL_STUBS = [
-    "lowering-backends.md" => "# [Lowering a distribution to a dynamical system](@id lowering-backends)"
+    "backend-sciml.md" => "# [SciMLBase: the ODE view](@id backend-sciml)",
+    "backend-catalyst.md" => "# [Catalyst: the reaction-network view](@id backend-catalyst)",
+    "backend-jump.md" => "# [JumpProcesses: the exact stochastic view](@id backend-jump)",
+    "backend-petri.md" => "# [AlgebraicPetri: the Petri-net view](@id backend-petri)"
 ]
 
 # Heavy tutorials that always render from their `TUTORIAL_STUBS` heading and

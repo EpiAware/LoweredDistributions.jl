@@ -14,7 +14,13 @@ pages = [
     # package grows.
     "Getting started" => [
         "Overview" => "getting-started/index.md",
-        "Lowering a distribution to a dynamical system" => "getting-started/tutorials/lowering-backends.md"
+        "Lowering" => [
+            "Lowering a distribution to a dynamical system" => "getting-started/tutorials/lowering-backends.md",
+            "SciMLBase: the ODE view" => "getting-started/tutorials/backend-sciml.md",
+            "Catalyst: reaction networks" => "getting-started/tutorials/backend-catalyst.md",
+            "JumpProcesses: stochastic simulation" => "getting-started/tutorials/backend-jump.md",
+            "AlgebraicPetri: Petri nets" => "getting-started/tutorials/backend-petri.md"
+        ]
     ],
     "API reference" => [
         "Public API" => "lib/public.md",
