@@ -71,6 +71,7 @@ abstract type AbstractChainTrick <: AbstractLowering end
 include("chain_stage.jl")
 include("chain_tricks.jl")
 include("phase_type.jl")
+include("convolve.jl")
 include("ctmc.jl")
 include("lower.jl")
 include("reaction_compartments.jl")
