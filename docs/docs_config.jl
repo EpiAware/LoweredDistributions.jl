@@ -30,7 +30,8 @@ const HEAVY_TUTORIALS = [
     "backend-sciml.jl",
     "backend-catalyst.jl",
     "backend-jump.jl",
-    "backend-petri.jl"
+    "backend-petri.jl",
+    "composing-delays.jl"
 ]
 
 # Where the tutorial `.jl` sources and rendered `.md` pages live, relative to
@@ -46,7 +47,8 @@ const TUTORIAL_STUBS = [
     "backend-sciml.md" => "# [SciMLBase: the ODE view](@id backend-sciml)",
     "backend-catalyst.md" => "# [Catalyst: the reaction-network view](@id backend-catalyst)",
     "backend-jump.md" => "# [JumpProcesses: the exact stochastic view](@id backend-jump)",
-    "backend-petri.md" => "# [AlgebraicPetri: the Petri-net view](@id backend-petri)"
+    "backend-petri.md" => "# [AlgebraicPetri: the Petri-net view](@id backend-petri)",
+    "composing-delays.md" => "# [Composing delays: convolution](@id composing-delays)"
 ]
 
 # Heavy tutorials that always render from their `TUTORIAL_STUBS` heading and

@@ -16,10 +16,12 @@
 # `docs/algebraic_petri` environment instead (the same split `test/` uses).
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+ConvolvedDistributions = "f5b942c9-bc5b-4664-8486-7f531bb06742"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
+EpiAwareADTools = "908e2895-a690-4874-a954-ca006cb9734d"
 EpiAwarePackageTools = "7aaea248-0d11-4a0d-a7dc-86da30abb951"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
@@ -36,13 +38,20 @@ LoweredDistributions = {path = ".."}
 # the env resolves out of the box. Switch to a local path to
 # develop the kit alongside this package.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
+# ConvolvedDistributions is registered at 0.1.0; the composing-delays tutorial
+# uses the public `components` accessor from 0.2 (`main`), which also pulls its
+# unregistered transitive dep EpiAwareADTools — pin both until 0.2 registers.
+ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
+EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
 
 [compat]
 Catalyst = "16"
+ConvolvedDistributions = "0.2"
 Distributions = "0.25"
 Documenter = "1"
 DocumenterCitations = "1"
 DocumenterVitepress = "0.3"
+EpiAwareADTools = "0.1"
 ForwardDiff = "0.10, 1"
 JumpProcesses = "9"
 Literate = "2"
