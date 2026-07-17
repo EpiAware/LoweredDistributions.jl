@@ -7,10 +7,12 @@ ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+ConvolvedDistributions = "f5b942c9-bc5b-4664-8486-7f531bb06742"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 DifferentiationInterfaceTest = "a82114a7-5aa3-49a8-9643-716bb13727a3"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+EpiAwareADTools = "908e2895-a690-4874-a954-ca006cb9734d"
 EpiAwarePackageTools = "7aaea248-0d11-4a0d-a7dc-86da30abb951"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -36,10 +38,12 @@ ADTypes = "1"
 Aqua = "0.8"
 BenchmarkTools = "1"
 Catalyst = "16"
+ConvolvedDistributions = "0.2"
 DifferentiationInterface = "0.6, 0.7"
 DifferentiationInterfaceTest = "0.9, 0.10"
 Distributions = "0.25"
 Documenter = "1"
+EpiAwareADTools = "0.1"
 ExplicitImports = "1"
 ForwardDiff = "0.10, 1"
 JET = "0.9, 0.10"
@@ -61,3 +65,10 @@ LoweredDistributions = {path = ".."}
 # resolves out of the box. Switch to a local path if you develop the kit
 # alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
+# ConvolvedDistributions is registered at 0.1.0, but the public `components`
+# accessor the bridge peels a `Convolved` with lands in 0.2 — pin `main` until
+# 0.2 registers, then this can drop to a registry resolve.
+ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
+# EpiAwareADTools is ConvolvedDistributions' (unregistered) transitive dep; a
+# dependency's own [sources] is ignored, so the root env must pin it too.
+EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
