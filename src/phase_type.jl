@@ -82,6 +82,16 @@ function _erlang_phase_type(m::Real, scv::Real, max_phases::Int)
         "lower the distribution with `lower(dist)`, whose `ErlangChain` " *
         "stores the phase count rather than the matrix."))
     k = max(round(Int, phases), 1)
+    return _fixed_erlang_phase_type(m, k)
+end
+
+# A `k`-stage Erlang chain as a canonical `PhaseType(α, S)`, its rate matched to
+# the mean `m` (`rate = k / m`). The phase count `k` is supplied, not derived
+# from the distribution's dispersion, so the α/S dimension does not depend on
+# the value being lowered — the AD-stable building block behind the
+# `phases`-keyword `lower`. Only the rate carries an AD dual; the structure is
+# constant, so it differentiates on every backend.
+function _fixed_erlang_phase_type(m::Real, k::Int)
     rate = k / m
     T = typeof(rate)
     # `zeros` + `setindex!` rather than a comprehension: on the Julia LTS,

@@ -78,6 +78,7 @@ const ODE_SURVIVAL_DIRECT = "ode_problem solve survival gradient (PhaseType, dir
 const ADAPTIVE_SURVIVAL = "lower(dist) adaptive-dispatch survival gradient"
 const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
 const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
+const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -184,6 +185,18 @@ function _canonical_h2_survival(θ)
     return _pt_survival(lower(Gamma(0.5, exp(θ[1])), PhaseType), 5.0)
 end
 
+# The fixed-phase-count entry point `lower(dist, PhaseType; phases = k)`: a
+# k-stage Erlang whose rate matches `mean(dist)`, so the (α, S) dimension is
+# constant as θ varies. Here θ moves the Gamma SHAPE, which the adaptive
+# `round(1 / c²)` count would step discontinuously (undifferentiable at the
+# rounding boundaries); fixing `phases = 5` pins the structure so only the
+# continuous rate carries the AD dual, and the survival gradient is then clean
+# on every backend, Enzyme included. This is the AD-stable fitting path.
+function _fixed_k_survival(θ)
+    return _pt_survival(
+        lower(Gamma(exp(θ[1]), 1.0), PhaseType; phases = 5), 5.0)
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -245,6 +258,13 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = CANONICAL_H2,
             res1 = with_reference ?
                    _reference(_canonical_h2_survival, θ8, ()) : nothing))
+
+    θ9 = [log(3.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_fixed_k_survival, θ9;
+            name = FIXED_K_ERLANG,
+            res1 = with_reference ?
+                   _reference(_fixed_k_survival, θ9, ()) : nothing))
 
     return out
 end
