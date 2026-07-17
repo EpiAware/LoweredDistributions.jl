@@ -12,11 +12,11 @@
 # Light tutorials emit `@example` blocks that Documenter runs in-process; keep
 # cheap tutorials here.
 #
-# `lowering-backends.jl` is the lowering overview: it only loads
-# LoweredDistributions and Distributions to `lower` a few delays and show the
-# canonical `PhaseType`, so it runs in-process. The per-backend pages that load
-# a heavy backend are `HEAVY_TUTORIALS` below.
-const LIGHT_TUTORIALS = ["lowering-backends.jl"]
+# `lowering-backends.jl` is the lowering overview and `fitting-ad-stable.jl` the
+# AD-stable-fitting page: both only load LoweredDistributions + Distributions
+# (plus ForwardDiff for the gradient demo), so they run in-process. The
+# per-backend pages that load a heavy backend are `HEAVY_TUTORIALS` below.
+const LIGHT_TUTORIALS = ["lowering-backends.jl", "fitting-ad-stable.jl"]
 
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) are each
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
