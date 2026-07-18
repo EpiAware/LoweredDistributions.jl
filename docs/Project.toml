@@ -12,8 +12,11 @@
 # AlgebraicPetri is deliberately absent: AlgebraicPetri 0.10's own Catalyst
 # weakdep extension caps Catalyst at "13", which cannot resolve against this
 # package's `Catalyst = "16"` compat, so the two never coexist in one
-# environment. The tutorial's Petri section runs in the isolated
-# `docs/algebraic_petri` environment instead (the same split `test/` uses).
+# environment. The tutorial's Petri section runs against the isolated
+# `test/algebraic_petri` environment instead (a subprocess from
+# docs/src/getting-started/tutorials/backend-petri.jl; there is no separate
+# docs-side environment — the demo script it runs is nested inside
+# test/algebraic_petri itself, alongside the Project.toml that pins it).
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 ConvolvedDistributions = "f5b942c9-bc5b-4664-8486-7f531bb06742"

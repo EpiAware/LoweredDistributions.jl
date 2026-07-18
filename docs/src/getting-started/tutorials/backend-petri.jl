@@ -12,8 +12,7 @@ If you are reading this as a downloaded script rather than building the docs, th
 using LoweredDistributions
 
 petri_env = joinpath(pkgdir(LoweredDistributions), "test", "algebraic_petri")
-petri_script = joinpath(pkgdir(LoweredDistributions), "docs",
-    "algebraic_petri", "demo.jl")
+petri_script = joinpath(petri_env, "demo.jl")
 
 # The demo script itself, printed from the file that is about to be run, so the page cannot drift from the code:
 

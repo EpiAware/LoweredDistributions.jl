@@ -1,8 +1,9 @@
-# Run by the getting-started tutorial in the isolated `test/algebraic_petri`
-# environment (AlgebraicPetri 0.10 caps Catalyst at 13, so it cannot share an
+# Run by the getting-started tutorial, nested here rather than under docs/
+# because it needs the isolated `test/algebraic_petri` environment it lives
+# alongside (AlgebraicPetri 0.10 caps Catalyst at 13, so it cannot share an
 # environment with this package's Catalyst 16 extension). Run it by hand with:
 #
-#   julia --project=test/algebraic_petri docs/algebraic_petri/demo.jl
+#   julia --project=test/algebraic_petri test/algebraic_petri/demo.jl
 
 using LoweredDistributions, Distributions, AlgebraicPetri
 
