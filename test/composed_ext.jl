@@ -8,6 +8,7 @@
 # constructor and whose transition matrix is stochastic.
 
 @testitem "Composed extension: scalar composers lower to phase-types" begin
+    using LoweredDistributions
     using LoweredDistributions: lower, PhaseType
     using ComposedDistributions: sequential, resolve, compete
     using Distributions
