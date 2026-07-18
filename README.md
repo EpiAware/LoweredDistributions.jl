@@ -21,10 +21,18 @@ See the [lowering tutorial](https://lowereddistributions.epiaware.org/stable/get
 
 ## Getting started
 
+A `Gamma(3, 1.5)` delay is exactly three exponential compartments in series, each left at rate `1/1.5`, so it lowers to an `ErlangChain`.
+
 ```julia
 using LoweredDistributions, Distributions
 
 lower(Gamma(3.0, 1.5))
+```
+
+Every phase-type lowering converts to the canonical `PhaseType(α, S)` view, the sub-generator shape the backends consume.
+
+```julia
+PhaseType(lower(Gamma(3.0, 1.5))).S
 ```
 
 The [tutorial](https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends) takes one delay through all four backends and checks each against the distribution it came from.
@@ -32,8 +40,17 @@ See the [documentation](https://lowereddistributions.epiaware.org/stable/) for t
 
 ## Where to learn more
 
-- [GitHub Discussions](https://github.com/EpiAware/LoweredDistributions.jl/discussions)
-- [GitHub Repository](https://github.com/EpiAware/LoweredDistributions.jl)
+- Want to get started running code? See the [getting started guide](https://lowereddistributions.epiaware.org/stable/getting-started/).
+- Want to understand the API? See the [API reference](https://lowereddistributions.epiaware.org/stable/lib/public).
+- Want to see the code? Check out our [GitHub repository](https://github.com/EpiAware/LoweredDistributions.jl).
+
+## Getting help
+
+For usage questions, ask on the [Julia Discourse](https://discourse.julialang.org)
+(the SciML or usage categories) or the [epinowcast community forum](https://community.epinowcast.org),
+our home for epidemiological modelling questions.
+Please use [GitHub issues](https://github.com/EpiAware/LoweredDistributions.jl/issues)
+for bug reports and feature requests only.
 
 <!-- standard-sections:start -->
 <!-- MANAGED by EpiAwarePackageTools.scaffold — do not edit between the

@@ -44,4 +44,11 @@ Four package extensions turn any lowering into a backend object: SciMLBase ([`od
 ## Learning more
 
 - Want the full interface? See the [Public API](@ref public-api).
-- Want to report a problem or ask a question? Open an issue or start a discussion on the [GitHub repository](https://github.com/EpiAware/LoweredDistributions.jl).
+
+## Getting help
+
+For usage questions, ask on the [Julia Discourse](https://discourse.julialang.org)
+(the SciML or usage categories) or the [epinowcast community forum](https://community.epinowcast.org),
+our home for epidemiological modelling questions.
+Please use [GitHub issues](https://github.com/EpiAware/LoweredDistributions.jl/issues)
+for bug reports and feature requests only.
