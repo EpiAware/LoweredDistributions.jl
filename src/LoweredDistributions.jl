@@ -80,7 +80,7 @@ include("ode.jl")
 include("petri.jl")
 include("jump.jl")
 
-export lower, AbstractLowering, AbstractChainTrick
+export lower
 export ChainStage, compartment_stages
 export ErlangChain, Coxian, PhaseType, phase_type
 export CTMC, ctmc, transition_probability, state_index
@@ -88,5 +88,11 @@ export linear_chain_reactions, reaction_system
 export ode_problem
 export petri_net
 export jump_problem
+
+# Public API - functions that are part of the public interface but not
+# exported (Julia 1.11+).
+@static if VERSION >= v"1.11"
+    include("public.jl")
+end
 
 end # module LoweredDistributions
