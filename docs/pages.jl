@@ -30,5 +30,6 @@ pages = [
     ],
     "Development" => [
         "Extending LoweredDistributions" => "developer/extending.md"
-    ]
+    ],
+    "Release notes" => "release-notes.md"
 ]
