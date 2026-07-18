@@ -17,7 +17,7 @@ onto a backend-agnostic dynamical-systems representation._
 
 A delay distribution and a compartmental model are two views of the same thing: `Gamma(3, 1.5)` is a waiting time, and also three exponential compartments in series, each left at rate `1/1.5`.
 `lower` maps any `Distribution` onto that dynamical-systems view, fitting one by moment-matching where no exact chain exists, and four weak-dependency extensions turn the result into a Catalyst, SciMLBase, JumpProcesses, or AlgebraicPetri object.
-See the [lowering tutorial](https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends) for the full hierarchy, the fitting criterion, and a worked example across all four backends.
+See the [lowering tutorial](https://lowereddistributions.epiaware.org/dev/getting-started/tutorials/lowering-backends) for the full hierarchy, the fitting criterion, and a worked example across all four backends.
 
 ## Getting started
 
@@ -27,8 +27,8 @@ using LoweredDistributions, Distributions
 lower(Gamma(3.0, 1.5))
 ```
 
-The [tutorial](https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends) takes one delay through all four backends and checks each against the distribution it came from.
-See the [documentation](https://lowereddistributions.epiaware.org/stable/) for the full walkthrough.
+The [tutorial](https://lowereddistributions.epiaware.org/dev/getting-started/tutorials/lowering-backends) takes one delay through all four backends and checks each against the distribution it came from.
+See the [documentation](https://lowereddistributions.epiaware.org/dev/) for the full walkthrough.
 
 ## Where to learn more
 
