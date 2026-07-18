@@ -20,6 +20,7 @@ JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ModifiedDistributions = "664e6f8c-d74f-44d3-9f37-f82699103046"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -50,6 +51,7 @@ JET = "0.9, 0.10"
 JuliaFormatter = "2"
 JumpProcesses = "9"
 LinearAlgebra = "1"
+ModifiedDistributions = "0.1"
 OrdinaryDiffEqTsit5 = "1, 2"
 Pkg = "1"
 Random = "1"
@@ -61,6 +63,13 @@ TestItems = "1"
 
 [sources]
 LoweredDistributions = {path = ".."}
+# ModifiedDistributions is unregistered; pin its paired removal branch (#51 —
+# LD now hosts the lower() bridge for the modifier leaves, so MD's reverse
+# extension is coming out in lockstep). Two extensions both defining
+# lower(::Affine) etc. would collide under Julia 1.12's cross-module
+# overwrite rules if MD main (still carrying the old ext) were loaded
+# alongside this branch. Repin to rev = "main" once MD's removal PR merges.
+ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "refactor/remove-ld-ext"}
 # Until EpiAwarePackageTools is registered, it is pinned by git so the env
 # resolves out of the box. Switch to a local path if you develop the kit
 # alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.

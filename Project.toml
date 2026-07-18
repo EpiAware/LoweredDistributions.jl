@@ -14,6 +14,7 @@ AlgebraicPetri = "4f99eebe-17bf-4e98-b6a1-2c4f205a959b"
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
 ConvolvedDistributions = "f5b942c9-bc5b-4664-8486-7f531bb06742"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
+ModifiedDistributions = "664e6f8c-d74f-44d3-9f37-f82699103046"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
@@ -21,6 +22,7 @@ LoweredDistributionsAlgebraicPetriExt = "AlgebraicPetri"
 LoweredDistributionsCatalystExt = "Catalyst"
 LoweredDistributionsConvolvedDistributionsExt = "ConvolvedDistributions"
 LoweredDistributionsJumpProcessesExt = "JumpProcesses"
+LoweredDistributionsModifiedDistributionsExt = "ModifiedDistributions"
 LoweredDistributionsSciMLBaseExt = "SciMLBase"
 
 [compat]
@@ -31,6 +33,7 @@ Distributions = "0.25"
 DocStringExtensions = "0.9"
 JumpProcesses = "9"
 LinearAlgebra = "1"
+ModifiedDistributions = "0.1"
 SciMLBase = "2, 3"
 Statistics = "1"
 julia = "1.11, 1.12"
