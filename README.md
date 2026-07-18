@@ -15,24 +15,9 @@ onto a backend-agnostic dynamical-systems representation._
 
 ## Why LoweredDistributions?
 
-A delay distribution and a compartmental model are two views of the same
-thing.
-`Gamma(3, 1.5)` is a waiting time; it is also three exponential compartments
-in series, each left at rate `1/1.5`.
-
-- A single entry point, `lower`, turns a `Distribution` into a
-  backend-agnostic dynamical-systems representation: an `ErlangChain`,
-  `Coxian`, or `PhaseType` (all convertible to the canonical `PhaseType(α, S)`
-  view), or a `CTMC` generator.
-- Distributions with no exact chain representation are fitted by matching
-  their first two moments, covering both the under-dispersed (`c² ≤ 1`, an
-  Erlang chain) and over-dispersed (`c² > 1`, a hyperexponential mixture)
-  cases.
-- Four weak-dependency extensions turn any lowering into a backend object: a
-  Catalyst `ReactionSystem` (`reaction_system`), a SciMLBase `ODEProblem`
-  (`ode_problem`), an AlgebraicPetri `LabelledPetriNet` (`petri_net`), and a
-  JumpProcesses `JumpProblem` for exact stochastic simulation
-  (`jump_problem`).
+A delay distribution and a compartmental model are two views of the same thing: `Gamma(3, 1.5)` is a waiting time, and also three exponential compartments in series, each left at rate `1/1.5`.
+`lower` maps any `Distribution` onto that dynamical-systems view, fitting one by moment-matching where no exact chain exists, and four weak-dependency extensions turn the result into a Catalyst, SciMLBase, JumpProcesses, or AlgebraicPetri object.
+See the [lowering tutorial](https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends) for the full hierarchy, the fitting criterion, and a worked example across all four backends.
 
 ## Getting started
 
@@ -42,11 +27,8 @@ using LoweredDistributions, Distributions
 lower(Gamma(3.0, 1.5))
 ```
 
-The [tutorial](https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends)
-takes one delay through all four backends and checks each against the
-distribution it came from.
-See the [documentation](https://lowereddistributions.epiaware.org/stable/)
-for the full walkthrough.
+The [tutorial](https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends) takes one delay through all four backends and checks each against the distribution it came from.
+See the [documentation](https://lowereddistributions.epiaware.org/stable/) for the full walkthrough.
 
 ## Where to learn more
 

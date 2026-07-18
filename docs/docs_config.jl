@@ -18,6 +18,17 @@
 # per-backend pages that load a heavy backend are `HEAVY_TUTORIALS` below.
 const LIGHT_TUTORIALS = ["lowering-backends.jl", "fitting-ad-stable.jl"]
 
+# `ad-backends.jl` (the kit-managed AD-backends page, also under
+# `TUTORIALS_SUBDIR`) is deliberately absent from every list below, so it does
+# not render. It needs ~9 extra docs deps (Enzyme, Mooncake, CairoMakie,
+# AlgebraOfGraphics, DataFramesMeta, ...) that are not yet in
+# `docs/Project.toml`, is a material docs-build-time change on its own, and
+# the sibling ComposedDistributions.jl hit an actual resolution failure
+# adding the same page (AlgebraOfGraphics pins DimensionalData incompatibly
+# with the rest of the docs env). Tracked in
+# https://github.com/EpiAware/LoweredDistributions.jl/issues/34; wire it in
+# there, not here.
+
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) are each
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
 #

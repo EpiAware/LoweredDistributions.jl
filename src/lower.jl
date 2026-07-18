@@ -128,6 +128,9 @@ lower(Exponential(2.0), PhaseType)    # PhaseType(1 phase), was a CTMC
 
   - [`lower`](@ref): the adaptive dispatch this canonicalises.
   - [`phase_type`](@ref): the two-moment fit both share.
+  - [Fitting a lowered distribution under AD, stably](@ref fitting-ad-stable):
+    the `phases` keyword worked through a Turing recipe, with the failure
+    modes this method's `Union`-avoidance and `max_phases` guard against.
 """
 function lower(d::Distribution, ::Type{PhaseType};
         phases::Union{Nothing, Int} = nothing, max_phases::Int = 1_000)
