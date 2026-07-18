@@ -44,6 +44,8 @@ Four package extensions turn any lowering into a backend object: SciMLBase ([`od
 ## Learning more
 
 - Want the full interface? See the [Public API](@ref public-api).
+- Want the packages LoweredDistributions works alongside? See
+  [Related packages](../index.md) on the home page.
 
 ## Getting help
 
