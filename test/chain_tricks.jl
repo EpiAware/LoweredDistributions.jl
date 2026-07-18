@@ -48,6 +48,31 @@ end
     @test sum(pt.S[2, :]) ≈ -0.3
 end
 
+@testitem "PhaseType(::Coxian) promotes the element type, not hardcoded Float64" begin
+    using LoweredDistributions
+    using ForwardDiff: Dual
+
+    # A Coxian with Dual-typed rates (the shape update(::Coxian, dist) — a
+    # differentiated caller — produces) must convert to a PhaseType that
+    # still carries the dual, not one that silently truncates it back to
+    # Float64 (the bug this regression test guards: PhaseType(::Coxian)
+    # used to hardcode zeros(Float64, k)).
+    d = Dual(2.0, 1.0)
+    c = Coxian([d, d], [1.0, 0.0])
+    pt = PhaseType(c)
+    @test eltype(pt.α) == typeof(d)
+    @test eltype(pt.S) == typeof(d)
+    @test pt.α == [one(d), zero(d)]
+    @test pt.S[1, 2] == d * c.probs[1]
+    @test pt.S[2, 2] == -d
+
+    # Heterogeneous rates/probs element types promote across both, since
+    # S[i, i+1] = rates[i] * probs[i] mixes them.
+    c2 = Coxian([d, 3.0], [1.0, 0.0])
+    pt2 = PhaseType(c2)
+    @test eltype(pt2.S) == typeof(d)
+end
+
 @testitem "PhaseType(::ErlangChain) round-trips through Coxian" begin
     using LoweredDistributions, Distributions
 

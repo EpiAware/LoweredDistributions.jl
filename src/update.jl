@@ -15,7 +15,7 @@
 # The rescaling trick this leans on: for any phase-type `(α, S)`, scaling the
 # sub-generator `S` by a positive constant `c` is exactly time-rescaling the
 # represented delay (`X ~ PhaseType(α, S)` implies `X / c ~ PhaseType(α, c·S)`).
-# That holds for ANY `(α, S)`, not just the two canonical fits `lower` builds,
+# That holds for any `(α, S)`, not just the two canonical fits `lower` builds,
 # so matching `dist`'s mean by rescaling `S` by `mean(lowered) / mean(dist)`
 # reproduces `dist`'s mean exactly while holding `α` — and hence every
 # dispersion/shape statistic (c², skewness, ...) — bit-for-bit fixed. This is

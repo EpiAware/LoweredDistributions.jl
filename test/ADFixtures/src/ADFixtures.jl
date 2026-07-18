@@ -49,12 +49,23 @@
 #   - `canonical_erlang` / `canonical_h2`: the fix — the same survival through
 #     `lower(dist, PhaseType)`, the type-stable canonical lowering, on both
 #     sides of the `c²` branch. Clean on every backend, Enzyme included.
+#   - `update_erlang` / `update_h2` / `update_coxian`: the same survival, but
+#     read off `update(template, dist)` (#54) rather than a fresh `lower`
+#     call — a FIXED structural template (built once, outside the
+#     differentiated closure, exactly the recommended usage) has its numeric
+#     fields rescaled by `dist`'s mean. `update` never branches on `dist`'s
+#     value at all (a single scalar rescale of the template's generator), so
+#     these are clean on every backend, Enzyme included, on both sides of the
+#     `c²` split and for `Coxian` too.
 #
 # `compartment_stages`/`ErlangChain` are NOT included: `ChainStage.rate` is a
 # concrete `Float64` field (ported as-is from CensoredDistributions.jl), so
 # that lowering is intentionally non-differentiable structural data, not a
 # differentiated path — which is exactly why `lower(dist, PhaseType)` builds
-# `(α, S)` directly instead of going through it.
+# `(α, S)` directly instead of going through it. The same wall means
+# `update(::ErlangChain, dist)` (#54) is not included either — it shares the
+# limitation, guarded instead by an explicit ArgumentError test in
+# test/update.jl, not an AD fixture.
 module ADFixtures
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
@@ -79,6 +90,9 @@ const ADAPTIVE_SURVIVAL = "lower(dist) adaptive-dispatch survival gradient"
 const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
 const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
+const UPDATE_ERLANG = "update(PhaseType, dist) survival gradient (Erlang template)"
+const UPDATE_H2 = "update(PhaseType, dist) survival gradient (H2 template)"
+const UPDATE_COXIAN = "update(Coxian, dist) survival gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -197,6 +211,41 @@ function _fixed_k_survival(θ)
         lower(Gamma(exp(θ[1]), 1.0), PhaseType; phases = 5), 5.0)
 end
 
+# Fixed structural templates for the `update` scenarios below, built ONCE at
+# module load — never touched by the differentiated `θ`, exactly the usage
+# `update`'s own docstring recommends (a reference computed from a point
+# estimate, outside the hot loop). Their own construction is not on the
+# differentiated path at all.
+const _UPDATE_ERLANG_TEMPLATE = lower(Gamma(3.0, 1.5), PhaseType)
+const _UPDATE_H2_TEMPLATE = lower(Gamma(0.5, 1.0), PhaseType)
+const _UPDATE_COXIAN_TEMPLATE = Coxian(lower(Gamma(3.0, 1.5)))
+
+# update(template, dist) on the Erlang-canonical template (c² ≤ 1): rescales
+# the fixed 3-phase generator to match the new mean, holding α and the chain
+# topology fixed. No branching on θ at all, so this is expected clean on
+# every backend.
+function _update_erlang_survival(θ)
+    p = update(_UPDATE_ERLANG_TEMPLATE, Gamma(3.0, exp(θ[1])))
+    return _pt_survival(p, 5.0)
+end
+
+# The same update(), on the hyperexponential template (c² > 1): the mixture
+# weight α = [p, 1 - p] is held fixed (not re-derived from θ's implied c²),
+# only the two rates rescale.
+function _update_h2_survival(θ)
+    p = update(_UPDATE_H2_TEMPLATE, Gamma(0.5, exp(θ[1])))
+    return _pt_survival(p, 5.0)
+end
+
+# update() on a Coxian template: rescales `rates` through the canonical
+# PhaseType(::Coxian) embedding (the same conversion whose element-type
+# promotion `test/chain_tricks.jl`'s Dual-eltype regression test guards),
+# holding `probs` fixed.
+function _update_coxian_survival(θ)
+    c = update(_UPDATE_COXIAN_TEMPLATE, Gamma(3.0, exp(θ[1])))
+    return _pt_survival(PhaseType(c), 5.0)
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -265,6 +314,27 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = FIXED_K_ERLANG,
             res1 = with_reference ?
                    _reference(_fixed_k_survival, θ9, ()) : nothing))
+
+    θ10 = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_erlang_survival, θ10;
+            name = UPDATE_ERLANG,
+            res1 = with_reference ?
+                   _reference(_update_erlang_survival, θ10, ()) : nothing))
+
+    θ11 = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_h2_survival, θ11;
+            name = UPDATE_H2,
+            res1 = with_reference ?
+                   _reference(_update_h2_survival, θ11, ()) : nothing))
+
+    θ12 = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_coxian_survival, θ12;
+            name = UPDATE_COXIAN,
+            res1 = with_reference ?
+                   _reference(_update_coxian_survival, θ12, ()) : nothing))
 
     return out
 end
