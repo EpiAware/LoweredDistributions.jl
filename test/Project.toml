@@ -65,20 +65,14 @@ TestItems = "1"
 
 [sources]
 LoweredDistributions = {path = ".."}
-# ModifiedDistributions is unregistered; pin its paired removal branch (#51 —
-# LD now hosts the lower() bridge for the modifier leaves, so MD's reverse
-# extension is coming out in lockstep). Two extensions both defining
-# lower(::Affine) etc. would collide under Julia 1.12's cross-module
-# overwrite rules if MD main (still carrying the old ext) were loaded
-# alongside this branch. Repin to rev = "main" once MD's removal PR merges.
-ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "refactor/remove-ld-ext"}
-# ComposedDistributions is unregistered; pin its paired removal branch (#51 —
-# LD now hosts the lower() bridge for the composer types, so CD's reverse
-# extension is coming out in lockstep). Two extensions both defining
-# lower(::Sequential) etc. would collide under Julia 1.12's cross-module
-# overwrite rules if CD main (still carrying the old ext) were loaded
-# alongside this branch. Repin to rev = "main" once CD's removal PR merges.
-ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "refactor/remove-ld-ext"}
+# ModifiedDistributions is unregistered; pinned by git until it registers.
+# Its reverse lowering extension is gone (its removal PR merged) — this
+# package hosts the modifier lower() bridge (#51).
+ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "main"}
+# ComposedDistributions is unregistered; pinned by git until it registers.
+# Its reverse lowering extension is gone (its removal PR merged) — this
+# package hosts the composer lower() bridge (#51).
+ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
 # Until EpiAwarePackageTools is registered, it is pinned by git so the env
 # resolves out of the box. Switch to a local path if you develop the kit
 # alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.
