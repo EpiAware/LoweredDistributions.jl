@@ -27,5 +27,8 @@ pages = [
     "API reference" => [
         "Public API" => "lib/public.md",
         "Internal API" => "lib/internals.md"
+    ],
+    "Development" => [
+        "Extending LoweredDistributions" => "developer/extending.md"
     ]
 ]
