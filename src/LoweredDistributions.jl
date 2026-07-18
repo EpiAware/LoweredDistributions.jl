@@ -16,8 +16,13 @@ Two branches populate the hierarchy:
 [`lower`](@ref) dispatches a `Distribution` to one of these; [`phase_type`](@ref)
 is the adaptive two-moment fit ([`ErlangChain`](@ref) for `c² ≤ 1`,
 [`PhaseType`](@ref) for `c² > 1`) `lower` uses for anything without an exact
-lowering. Four weak-dependency extensions turn any [`AbstractLowering`](@ref)
-into a backend object: Catalyst.jl (reaction-network `Reaction`s via
+lowering. [`update`](@ref) is the shape-preserving companion: given an
+existing lowered value and a new `Distribution`, it recomputes only the
+numeric fields, holding the structure fixed — the safe path inside a
+differentiated inference loop, where re-deriving the structure from scratch on
+every draw risks it silently flipping. Four weak-dependency extensions turn
+any [`AbstractLowering`](@ref) into a backend object: Catalyst.jl
+(reaction-network `Reaction`s via
 [`linear_chain_reactions`](@ref), or a full `ReactionSystem` via
 [`reaction_system`](@ref)), SciMLBase.jl (the linear forward-Kolmogorov
 `ODEProblem` via [`ode_problem`](@ref)), AlgebraicPetri.jl
@@ -74,13 +79,14 @@ include("phase_type.jl")
 include("convolve.jl")
 include("ctmc.jl")
 include("lower.jl")
+include("update.jl")
 include("reaction_compartments.jl")
 include("generator.jl")
 include("ode.jl")
 include("petri.jl")
 include("jump.jl")
 
-export lower, AbstractLowering, AbstractChainTrick
+export lower, update, AbstractLowering, AbstractChainTrick
 export ChainStage, compartment_stages
 export ErlangChain, Coxian, PhaseType, phase_type
 export CTMC, ctmc, transition_probability, state_index

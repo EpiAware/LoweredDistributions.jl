@@ -142,9 +142,15 @@ end
 
 function PhaseType(c::Coxian)
     k = length(c.rates)
-    α = zeros(Float64, k)
-    α[1] = 1.0
-    S = zeros(Float64, k, k)
+    # Element type promoted across BOTH rates and probs (S mixes the two at
+    # S[i, i+1] = rates[i] * probs[i]), not hardcoded to Float64: a Coxian
+    # with e.g. Dual-typed rates (the AD-safe path `update` relies on) must
+    # convert to a PhaseType that still carries the dual, not one that
+    # silently truncates it back to a plain Float64.
+    T = promote_type(eltype(c.rates), eltype(c.probs))
+    α = zeros(T, k)
+    α[1] = one(T)
+    S = zeros(T, k, k)
     for i in 1:k
         S[i, i] = -c.rates[i]
         i < k && (S[i, i + 1] = c.rates[i] * c.probs[i])
