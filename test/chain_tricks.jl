@@ -1,5 +1,6 @@
 @testitem "ErlangChain wraps compartment_stages" begin
     using LoweredDistributions, Distributions
+    import LoweredDistributions: AbstractChainTrick
 
     e = ErlangChain(Gamma(3.0, 1.5))
     @test e isa AbstractChainTrick

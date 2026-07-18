@@ -36,6 +36,7 @@ end
 
 @testitem "lower falls back to phase_type for a general Distribution" begin
     using LoweredDistributions, Distributions
+    import LoweredDistributions: AbstractChainTrick
 
     d = LogNormal(0.0, 0.5)
     @test lower(d) isa AbstractChainTrick
