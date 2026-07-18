@@ -96,7 +96,7 @@ const LINKCHECK_IGNORE = [
 # resolve; the kit now emits the absolute GitHub blob URL itself, so the pair
 # would never match and the workaround is dead.
 const INDEX_REWRITES = [
-    "(https://lowereddistributions.epiaware.org/stable/getting-started/tutorials/lowering-backends)" => "(@ref lowering-backends)"
+    "(https://lowereddistributions.epiaware.org/dev/getting-started/tutorials/lowering-backends)" => "(@ref lowering-backends)"
 ]
 
 # Whether README ```julia blocks become runnable `@example readme` blocks on the
