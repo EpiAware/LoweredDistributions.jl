@@ -76,6 +76,8 @@ const PHASE_TYPE_H2 = "phase_type hyperexponential (α, S) gradient"
 const ODE_SURVIVAL = "ode_problem solve survival gradient (PhaseType)"
 const ODE_SURVIVAL_DIRECT = "ode_problem solve survival gradient (PhaseType, direct)"
 const ADAPTIVE_SURVIVAL = "lower(dist) adaptive-dispatch survival gradient"
+const ADAPTIVE_ERLANG_INT = "lower(dist) adaptive Erlang survival gradient (integer shape)"
+const ADAPTIVE_ERLANG_NONINT = "lower(dist) adaptive Erlang survival gradient (non-integer shape)"
 const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
 const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
@@ -170,6 +172,26 @@ function _adaptive_survival(θ)
     return _pt_survival(pt, 5.0)
 end
 
+# The adaptive dispatch on the ERLANG (c² ≤ 1) branch, via one-argument
+# `lower(d)`, for an integer shape: `lower(Gamma(3.0, ·))` folds to a concrete
+# `ErlangChain` whose per-stage rate carries the AD element type, so the
+# survival differentiates on every backend, Enzyme forward and reverse
+# included. Shape 3.0 is a literal, so the structural branch is decided at
+# compile time (the fitting invariant: phase count is fixed, only the rate is
+# inferred) and no `Union` reaches the differentiated code.
+function _adaptive_erlang_int(θ)
+    return _pt_survival(PhaseType(lower(Gamma(3.0, exp(θ[1])))), 5.0)
+end
+
+# The same adaptive Erlang path for a NON-integer shape still under-dispersed
+# (c² = 1 / 2.5 = 0.4 ≤ 1), so `lower` moment-matches to an Erlang chain rather
+# than reading an exact leaf. Covers the "non-integer shape" half of the
+# acceptance: the moment-matched rate is a smooth function of the scale and
+# carries the dual identically.
+function _adaptive_erlang_noninteger(θ)
+    return _pt_survival(PhaseType(lower(Gamma(2.5, exp(θ[1])))), 5.0)
+end
+
 # The type-stable twin: `lower(dist, PhaseType)` always returns the same
 # concrete type, so the same survival gradient is available on every backend.
 # Shape 3 (c² = 1/3 ≤ 1) takes the Erlang-chain branch, which the adaptive
@@ -244,6 +266,20 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = ADAPTIVE_SURVIVAL,
             res1 = with_reference ? _reference(_adaptive_survival, θ6, ()) :
                    nothing))
+
+    θ6e = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_adaptive_erlang_int, θ6e;
+            name = ADAPTIVE_ERLANG_INT,
+            res1 = with_reference ? _reference(_adaptive_erlang_int, θ6e, ()) :
+                   nothing))
+
+    θ6n = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_adaptive_erlang_noninteger, θ6n;
+            name = ADAPTIVE_ERLANG_NONINT,
+            res1 = with_reference ?
+                   _reference(_adaptive_erlang_noninteger, θ6n, ()) : nothing))
 
     θ7 = [log(1.5)]
     push!(out,
@@ -353,16 +389,14 @@ all, differentiates here too.
 function backend_broken_scenarios()
     ctmc_builder_broken = Set{String}([CTMC_BUILDER])
     ode_broken = Set{String}([ODE_SURVIVAL, ODE_SURVIVAL_DIRECT])
-    # The Union return type on its own: Enzyme-only (see the note above).
-    union_broken = Set{String}([ADAPTIVE_SURVIVAL])
     return Dict{String, Set{String}}(
         "ForwardDiff" => Set{String}(),
         "ReverseDiff (tape)" => copy(ode_broken),
         "Mooncake reverse" => copy(ode_broken),
         "Mooncake forward" => copy(ode_broken),
-        "Enzyme reverse" => union(ctmc_builder_broken, ode_broken, union_broken),
+        "Enzyme reverse" => union(ctmc_builder_broken, ode_broken),
         "Enzyme forward" => union(ctmc_builder_broken,
-            Set{String}([ODE_SURVIVAL]), union_broken)
+            Set{String}([ODE_SURVIVAL]))
     )
 end
 
