@@ -38,15 +38,20 @@ LoweredDistributions = {path = ".."}
 # the env resolves out of the box. Switch to a local path to
 # develop the kit alongside this package.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions is registered at 0.1.0; the composing-delays tutorial
-# uses the public `components` accessor from 0.2 (`main`), which also pulls its
-# unregistered transitive dep EpiAwareADTools — pin both until 0.2 registers.
-ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
+# ConvolvedDistributions is registered at 0.2.0, which already carries the
+# public `components` accessor the composing-delays tutorial uses. main has
+# moved to 1.0.0, but that migration is gated on a discrete value-support
+# design ruling and not yet registered; ModifiedDistributions 0.1.0
+# (released) is itself pinned back to registered Convolved 0.2.0 as the same
+# interim measure, so this env resolves from the registry rather than
+# git-pinning main. Compat is widened to "0.2, 1" ready for when the 1.0
+# release lands and this env can track main again. EpiAwareADTools remains
+# pinned below as a direct docs dep in its own right, unregistered.
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
 
 [compat]
 Catalyst = "16"
-ConvolvedDistributions = "0.2"
+ConvolvedDistributions = "0.2, 1"
 Distributions = "0.25"
 Documenter = "1"
 DocumenterCitations = "1"

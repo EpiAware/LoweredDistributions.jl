@@ -41,7 +41,7 @@ Aqua = "0.8"
 BenchmarkTools = "1"
 Catalyst = "16"
 ComposedDistributions = "0.1"
-ConvolvedDistributions = "0.2"
+ConvolvedDistributions = "0.2, 1"
 DifferentiationInterface = "0.6, 0.7"
 DifferentiationInterfaceTest = "0.9, 0.10, 0.11"
 Distributions = "0.25"
@@ -77,10 +77,12 @@ ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistribution
 # resolves out of the box. Switch to a local path if you develop the kit
 # alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions is registered at 0.1.0, but the public `components`
-# accessor the bridge peels a `Convolved` with lands in 0.2 — pin `main` until
-# 0.2 registers, then this can drop to a registry resolve.
-ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
-# EpiAwareADTools is ConvolvedDistributions' (unregistered) transitive dep; a
-# dependency's own [sources] is ignored, so the root env must pin it too.
+# ConvolvedDistributions' main has moved to 1.0.0, but that migration is
+# gated on a discrete value-support design ruling and not yet registered;
+# ModifiedDistributions 0.1.0 (released) is itself pinned back to registered
+# Convolved 0.2.0 as the same interim measure, so ConvolvedDistributions is
+# no longer git-pinned here either — it resolves from the registry (0.2.0).
+# Compat is widened to "0.2, 1" ready for when the 1.0 release lands and
+# this env can track main again. EpiAwareADTools remains pinned below as a
+# direct test dep in its own right, unregistered.
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
