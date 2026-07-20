@@ -52,7 +52,7 @@
 #     lowering (concrete whatever the value, so it does not rely on the branch
 #     folding), on both sides of the `c²` branch. Clean on every backend.
 #
-# The Erlang path (`c² ≤ 1`) IS differentiated here, through
+# The Erlang path (`c² ≤ 1`) is differentiated here, through
 # `adaptive_erlang_*`: `ChainStage` is parametric on its rate, so `lower(dist)`
 # on that branch carries an AD dual. Differentiating `lower(dist)` still needs
 # the structural parameter (the Gamma shape / phase count) held fixed — a
@@ -173,7 +173,7 @@ function _adaptive_survival(θ)
     return _pt_survival(pt, 5.0)
 end
 
-# The adaptive dispatch on the ERLANG (c² ≤ 1) branch, via one-argument
+# The adaptive dispatch on the Erlang (c² ≤ 1) branch, via one-argument
 # `lower(d)`, for an integer shape: `lower(Gamma(3.0, ·))` folds to a concrete
 # `ErlangChain` whose per-stage rate carries the AD element type, so the
 # survival differentiates on every backend, Enzyme forward and reverse
@@ -184,7 +184,7 @@ function _adaptive_erlang_int(θ)
     return _pt_survival(PhaseType(lower(Gamma(3.0, exp(θ[1])))), 5.0)
 end
 
-# The same adaptive Erlang path for a NON-integer shape still under-dispersed
+# The same adaptive Erlang path for a non-integer shape still under-dispersed
 # (c² = 1 / 2.5 = 0.4 ≤ 1), so `lower` moment-matches to an Erlang chain rather
 # than reading an exact leaf. Covers the "non-integer shape" half of the
 # acceptance: the moment-matched rate is a smooth function of the scale and

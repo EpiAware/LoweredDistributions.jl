@@ -1,5 +1,17 @@
 ## Unreleased
 
+- **fix:** one-argument `lower(d)` is now AD-stable on the Erlang path (#73).
+  `ChainStage` carries its rate's element type through `Coxian` and
+  `PhaseType`, so the `c² ≤ 1` Erlang lowering differentiates on every backend
+  (previously only Enzyme, through its native `Float64` tracking; ForwardDiff,
+  ReverseDiff and Mooncake hit the concrete `Float64` rate field). And
+  `lower(d::Gamma)`'s over-dispersed arm builds the hyperexponential
+  `PhaseType` directly rather than through `phase_type`, removing a `Union`
+  return that broke Enzyme's type analysis. Differentiating `lower(d)` needs
+  the Gamma shape (phase count) held constant — the fitting invariant that the
+  phase count is fixed structure — so the docs no longer warn against the
+  one-argument form on a differentiated path.
+
 - **feat:** this package now hosts the ModifiedDistributions lowering bridge
   (#51/#23): a `ModifiedDistributions` weakdep and
   `LoweredDistributionsModifiedDistributionsExt` define `lower` for the

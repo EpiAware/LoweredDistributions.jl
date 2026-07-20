@@ -148,13 +148,15 @@ end
 function PhaseType(c::Coxian)
     k = length(c.rates)
     T = promote_type(eltype(c.rates), eltype(c.probs))
-    α = zeros(T, k)
-    α[1] = one(T)
-    S = zeros(T, k, k)
-    for i in 1:k
-        S[i, i] = -c.rates[i]
-        i < k && (S[i, i + 1] = c.rates[i] * c.probs[i])
-    end
+    # Build α and S with comprehensions rather than `zeros(T, dims...)`: for an
+    # abstractly-typed Coxian `T = promote_type(...)` is not a concrete type, and
+    # `zeros(T, k, k)` then infers to a dimensionality-uncertain `Array` (JET
+    # reports a spurious `PhaseType(::Any, ::Array{Float64, 3})` no-matching-
+    # method at the constructor call). A comprehension's rank is fixed by its
+    # loop shape, so the sub-generator is always a `Matrix`.
+    α = [i == 1 ? one(T) : zero(T) for i in 1:k]
+    S = [i + 1 == j ? c.rates[i] * c.probs[i] :
+         (i == j ? -c.rates[i] : zero(T)) for i in 1:k, j in 1:k]
     return PhaseType(α, S)
 end
 
