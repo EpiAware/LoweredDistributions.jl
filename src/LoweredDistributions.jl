@@ -74,6 +74,7 @@ include("phase_type.jl")
 include("convolve.jl")
 include("ctmc.jl")
 include("lower.jl")
+include("update.jl")
 include("reaction_compartments.jl")
 include("generator.jl")
 include("ode.jl")
@@ -81,6 +82,7 @@ include("petri.jl")
 include("jump.jl")
 
 export lower
+export update, parameters
 export ChainStage, compartment_stages
 export ErlangChain, Coxian, PhaseType, phase_type
 export CTMC, ctmc, transition_probability, state_index
