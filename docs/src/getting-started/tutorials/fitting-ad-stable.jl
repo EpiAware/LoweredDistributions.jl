@@ -52,9 +52,8 @@ end
 
 The sampler differentiates through `θ` on the fixed-`k` structure; `k` never enters the sampled space, so there is no discrete quantity to differentiate, and the gradient is defined on every backend the package tests, Enzyme included.
 
-## The failure modes to avoid
+## The failure mode to avoid
 
-  - **`lower(d)`** (the adaptive dispatch) returns `Union{ErlangChain, PhaseType}`, a type-unstable return that breaks Enzyme outright. Use `lower(d, PhaseType; phases = k)` on a differentiated path, never the one-argument form.
   - **Letting `k` depend on a sampled parameter**: `lower(d, PhaseType)` without `phases` re-derives `k = round(1 / c²)` from the value, so the dimension steps at rounding boundaries and the gradient is undefined there. Fix `k`; infer the rate.
 
 ## See also
