@@ -58,9 +58,11 @@ end
 let
     g = Gamma(3.0, 1.5)
     tspan = (0.0, 5.0)
+    t = Catalyst.default_t()
+    Catalyst.@species onset(t) outcome(t)
     SUITE["Bridges"] = BenchmarkGroup()
     SUITE["Bridges"]["reaction_system (Catalyst)"] = @benchmarkable reaction_system(
-        $g, :onset, :outcome)
+        $g, $onset, $outcome)
     SUITE["Bridges"]["jump_problem (JumpProcesses)"] = @benchmarkable jump_problem(
         $g, $tspan)
     SUITE["Bridges"]["ode_problem (SciMLBase)"] = @benchmarkable ode_problem(
