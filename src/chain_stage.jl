@@ -19,11 +19,11 @@ which step of a chain the stage came from (`:delay` for a single leaf).
   - [`ErlangChain`](@ref): the [`AbstractChainTrick`](@ref) wrapping a vector of
     these.
 """
-struct ChainStage
+struct ChainStage{T <: Real}
     "Step name this stage was extracted from."
     name::Symbol
     "Per-stage exit rate ``1/\\theta``."
-    rate::Float64
+    rate::T
     "Number of Exponential sub-compartments ``k``."
     stages::Int
 end
@@ -137,5 +137,5 @@ compartment_stages(Gamma(3.0, 1.5))
 function compartment_stages(
         d::Distribution; name::Symbol = :delay, moment_match::Bool = false)
     s = _stage(d, moment_match)
-    return [ChainStage(name, Float64(s.rate), s.stages)]
+    return [ChainStage(name, s.rate, s.stages)]
 end

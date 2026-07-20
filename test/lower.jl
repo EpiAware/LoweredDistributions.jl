@@ -95,6 +95,29 @@ end
     end
 end
 
+@testitem "one-argument lower(d) differentiates on the Erlang path" begin
+    using LoweredDistributions, Distributions, ForwardDiff, LinearAlgebra
+
+    # The AD suite differentiates this on every backend; this main-suite guard
+    # checks the Erlang path (c² ≤ 1) via one-argument lower(d) on ForwardDiff,
+    # which the concrete-Float64 ChainStage rate used to block outright (issue
+    # #73). The gradient must agree with the type-stable canonical lowering.
+    # The package's matrix exponential (AD-friendly, unlike Base `exp` on a
+    # dual-valued matrix) gives the phase-type survival P(T > t) = sum(α'e^{St}).
+    _mexp = LoweredDistributions._matrix_exp
+    survival(pt, t) = sum(transpose(pt.α) * _mexp(pt.S .* t))
+    adaptive(shape) = θ -> survival(PhaseType(lower(Gamma(shape, exp(θ)))), 5.0)
+    canonical(shape) = θ -> survival(lower(Gamma(shape, exp(θ)), PhaseType), 5.0)
+
+    # Integer shape (exact Erlang) and non-integer shape (moment-matched, still
+    # c² ≤ 1); the literal shape fixes the structure so lower(d) folds concrete.
+    for shape in (3.0, 2.5)
+        g = ForwardDiff.derivative(adaptive(shape), log(1.5))
+        gref = ForwardDiff.derivative(canonical(shape), log(1.5))
+        @test g≈gref rtol=1e-8
+    end
+end
+
 @testitem "lower(dist, PhaseType) rejects a distribution with no finite moments" begin
     using LoweredDistributions, Distributions
 
