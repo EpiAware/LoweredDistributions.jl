@@ -38,11 +38,10 @@ LoweredDistributions = {path = ".."}
 # the env resolves out of the box. Switch to a local path to
 # develop the kit alongside this package.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions is registered at 0.1.0; the composing-delays tutorial
-# uses the public `components` accessor from 0.2 (`main`), which also pulls its
-# unregistered transitive dep EpiAwareADTools — pin both until 0.2 registers.
-ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
-EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
+# ConvolvedDistributions 0.2 (the version the composing-delays tutorial's
+# public `components` accessor needs) is now registered, so this resolves
+# from the registry; EpiAwareADTools (its transitive dep, also registered)
+# needs no pin either.
 
 [compat]
 Catalyst = "16"

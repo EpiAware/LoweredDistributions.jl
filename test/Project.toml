@@ -77,10 +77,6 @@ ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistribution
 # resolves out of the box. Switch to a local path if you develop the kit
 # alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions is registered at 0.1.0, but the public `components`
-# accessor the bridge peels a `Convolved` with lands in 0.2 — pin `main` until
-# 0.2 registers, then this can drop to a registry resolve.
-ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
-# EpiAwareADTools is ConvolvedDistributions' (unregistered) transitive dep; a
-# dependency's own [sources] is ignored, so the root env must pin it too.
-EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
+# ConvolvedDistributions 0.2 (the version the bridge's public `components`
+# accessor needs) is now registered, so this resolves from the registry;
+# EpiAwareADTools (its transitive dep, also registered) needs no pin either.
