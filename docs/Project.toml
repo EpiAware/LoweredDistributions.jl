@@ -47,7 +47,8 @@ EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.
 # interim measure, so this env resolves from the registry rather than
 # git-pinning main. Compat is widened to "0.2, 1" ready for when the 1.0
 # release lands and this env can track main again. EpiAwareADTools remains
-# pinned below as a direct docs dep in its own right, unregistered.
+# pinned below as a direct docs dep in its own right (registered at 0.1.0,
+# but main is pinned to track the same package's ongoing development).
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
 
 [compat]

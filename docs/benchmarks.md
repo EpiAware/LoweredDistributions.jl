@@ -52,7 +52,7 @@ problem, by comparing an Erlang passage time built two ways: a hand-written
 Catalyst reaction chain (the framework-native form) against
 [`reaction_system`](@ref) applied to [`lower`](@ref)'s `ErlangChain` fit of
 the equivalent `Gamma`. It runs live at docs-build time (a small
-[Chairmarks](https://github.com/JuliaCI/Chairmarks.jl) budget per point), so
+[Chairmarks](https://github.com/LilithHafner/Chairmarks.jl) budget per point), so
 the numbers below always reflect the current lowering code, not a pasted
 snapshot.
 
