@@ -16,6 +16,7 @@
 # `docs/algebraic_petri` environment instead (the same split `test/` uses).
 [deps]
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
 ConvolvedDistributions = "f5b942c9-bc5b-4664-8486-7f531bb06742"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -46,7 +47,8 @@ EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.
 # interim measure, so this env resolves from the registry rather than
 # git-pinning main. Compat is widened to "0.2, 1" ready for when the 1.0
 # release lands and this env can track main again. EpiAwareADTools remains
-# pinned below as a direct docs dep in its own right, unregistered.
+# pinned below as a direct docs dep in its own right (registered at 0.1.0,
+# but main is pinned to track the same package's ongoing development).
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
 
 [compat]
