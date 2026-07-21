@@ -19,6 +19,12 @@ Solving with `SSAStepper()` draws one exact sample path of the underlying Markov
 using JumpProcesses
 using Random
 using Statistics
+using CairoMakie
+using AlgebraOfGraphics
+using DataFramesMeta
+
+CairoMakie.activate!(type = "png", px_per_unit = 2)
+set_theme!(theme_latexfonts(); fontsize = 14)
 
 jprob = jump_problem(chain, (0.0, 100.0))
 jsol = solve(jprob, SSAStepper())
@@ -37,6 +43,22 @@ end
 
 absorption_time(jsol)
 
+# Each path is a piecewise-constant hop between states, so a handful of them plotted as step trajectories shows the individual, stochastic realisations this backend draws — several individuals jumping through the chain at different times, each absorbing on its own schedule.
+
+Random.seed!(20_260_701)
+function path_df(p)
+    s = solve(jump_problem(chain, (0.0, 15.0)), SSAStepper())
+    states = [findfirst(==(1), u) for u in s.u]
+    return DataFrame(t = s.t, state = states, path = "path $p")
+end
+paths_df = reduce(vcat, path_df(p) for p in 1:6)
+draw(
+    data(paths_df) *
+    mapping(:t, :state, color = :path) *
+    visual(Stairs; step = :post);
+    axis = (xlabel = "Time", ylabel = "State index (chain phases, then absorbed)")
+)
+
 # One path is a single draw, so draw many and compare their mean and standard deviation with the distribution we lowered.
 # This is a stochastic check, so it agrees to Monte Carlo error rather than to solver tolerance.
 
@@ -48,3 +70,14 @@ println("simulated mean = ", round(mean(draws); digits = 3),
     "   Gamma mean = ", round(mean(d); digits = 3))
 println("simulated sd   = ", round(std(draws); digits = 3),
     "   Gamma sd   = ", round(std(d); digits = 3))
+
+# Plotting the 2000 draws as a normalised histogram against the exact density is the direct visual check: the simulated absorption times land on the delay we lowered.
+
+ts_grid = 0.0:0.05:15.0
+density_df = DataFrame(t = collect(ts_grid), density = pdf.(d, ts_grid))
+draw(
+    (data((t = draws,)) * mapping(:t) *
+     AlgebraOfGraphics.density(datalimits = (0.0, 15.0))) +
+    (data(density_df) * mapping(:t, :density) * visual(Lines, linewidth = 2));
+    axis = (xlabel = "Absorption time", ylabel = "Density")
+)
