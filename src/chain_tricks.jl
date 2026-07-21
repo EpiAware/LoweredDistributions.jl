@@ -147,16 +147,24 @@ end
 
 function PhaseType(c::Coxian)
     k = length(c.rates)
-    T = promote_type(eltype(c.rates), eltype(c.probs))
     # Build α and S with comprehensions rather than `zeros(T, dims...)`: for an
     # abstractly-typed Coxian `T = promote_type(...)` is not a concrete type, and
     # `zeros(T, k, k)` then infers to a dimensionality-uncertain `Array` (JET
     # reports a spurious `PhaseType(::Any, ::Array{Float64, 3})` no-matching-
     # method at the constructor call). A comprehension's rank is fixed by its
     # loop shape, so the sub-generator is always a `Matrix`.
-    α = [i == 1 ? one(T) : zero(T) for i in 1:k]
+    #
+    # `z`/`o` come from an actual VALUE (`c.rates[1] * c.probs[1]`), not from
+    # `zero`/`one` of a bare `promote_type(eltype(c.rates), eltype(c.probs))`
+    # type: ReverseDiff's `promote_rule` for `TrackedReal` can drop its
+    # tape-owner type parameter, so `zero`/`one` of that under-specified type
+    # errors (`valtype` has no method for a 2-parameter `TrackedReal`), while
+    # `zero`/`one` of an actual tracked value dispatch correctly.
+    rz = c.rates[1] * c.probs[1]
+    z, o = zero(rz), one(rz)
+    α = [i == 1 ? o : z for i in 1:k]
     S = [i + 1 == j ? c.rates[i] * c.probs[i] :
-         (i == j ? -c.rates[i] : zero(T)) for i in 1:k, j in 1:k]
+         (i == j ? -c.rates[i] : z) for i in 1:k, j in 1:k]
     return PhaseType(α, S)
 end
 

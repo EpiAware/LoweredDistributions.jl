@@ -51,6 +51,15 @@
 #     `lower(dist, PhaseType)`, the unconditionally type-stable canonical
 #     lowering (concrete whatever the value, so it does not rely on the branch
 #     folding), on both sides of the `c²` branch. Clean on every backend.
+#   - `update_erlang` / `update_coxian` / `update_ctmc` / `update_phasetype`:
+#     differentiate through `update` (issue #75), one per lowered type. The
+#     structure is fixed OUTSIDE the traced closure (module-level constants) and
+#     only the continuous parameters carry the dual — the operation a fitting
+#     loop runs inside the differentiated region. Clean on every backend, Enzyme
+#     forward and reverse included: `update` rebuilds each object directly (the
+#     CTMC generator as a plain typed matrix, not through `ctmc(specs...)`),
+#     which is what lets it differentiate where the `ctmc_builder` scenario
+#     cannot.
 #
 # The Erlang path (`c² ≤ 1`) is differentiated here, through
 # `adaptive_erlang_*`: `ChainStage` is parametric on its rate, so `lower(dist)`
@@ -85,6 +94,10 @@ const ADAPTIVE_ERLANG_NONINT = "lower(dist) adaptive Erlang survival gradient (n
 const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
 const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
+const UPDATE_ERLANG = "update(ErlangChain, rates) survival gradient"
+const UPDATE_COXIAN = "update(Coxian, rates) survival gradient"
+const UPDATE_CTMC = "update(CTMC, rates) transition-probability gradient"
+const UPDATE_PHASETYPE = "update(PhaseType, [α; vec(S)]) survival gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -220,6 +233,64 @@ function _fixed_k_survival(θ)
         lower(Gamma(exp(θ[1]), 1.0), PhaseType; phases = 5), 5.0)
 end
 
+# Differentiate through `update` (issue #75), one scenario per lowered type.
+# `update` is the operation a gradient-based fitting loop runs INSIDE the
+# differentiated region: the structure (phase count, transition topology, state
+# set) is fixed by `lower` once, OUTSIDE the traced closure — here, the
+# module-level constants below — and only the continuous parameters carry the AD
+# dual. Each scenario reparameterises so its continuous surface is
+# domain-total (`exp` keeps rates positive for every real θ, including the
+# rule-preparation probe points Enzyme/Mooncake evaluate the closure at; the
+# PhaseType scenario scales a fixed base (α₀, S₀) by θ, which keeps the
+# sub-generator valid for any θ), so none of them trip the constructor's
+# validity guards off the declared point.
+#
+# All four are clean on every backend, Enzyme forward and reverse included —
+# that is the whole point of `update` rebuilding its object directly (the CTMC
+# generator as a plain typed matrix, not through `ctmc(specs...)`'s Pair-vararg
+# spec parser, which Enzyme cannot analyse; contrast `ctmc_builder`).
+const _UPDATE_ERLANG_L = lower(Gamma(3.0, 1.0))
+const _UPDATE_COXIAN_L = Coxian([1.0, 2.0, 3.0], [1.0, 1.0, 0.0])
+const _UPDATE_CTMC_L = ctmc(:a => (:b => 1.0), :b => (:a => 1.0, :c => 1.0))
+const _UPDATE_PT_L = lower(Gamma(0.5, 1.0), PhaseType)
+# The PhaseType scenario's reparameterisation base is a LITERAL (α₀, S₀), not
+# `_UPDATE_PT_L.α` / `.S` read at trace time: reading a Const global
+# `PhaseType`'s field VALUES (as opposed to just its structure, e.g.
+# `length(p.α)`) and mixing them arithmetically with the active θ inside the
+# closure trips a genuine Enzyme activity-analysis limitation when the result
+# rebuilds another instance of the same parametric struct type whose fields
+# are read downstream (`EnzymeRuntimeActivityError: ... getproperty(::
+# PhaseType, ...)`, "mismatched activity"). `update`/`PhaseType` themselves
+# differentiate cleanly on every backend once the flat vector arrives fully
+# formed (verified directly against Enzyme Forward and Reverse, matching
+# ForwardDiff exactly); baking the base point in as literals sidesteps the
+# closure-side limitation with no loss of coverage, since `_UPDATE_PT_L` is
+# still what `update` rebuilds — only the two phases' need the SAME count
+# as `_UPDATE_PT_L`'s (2), not the same literal values.
+const _UPDATE_PT_ALPHA0 = (0.6, 0.4)
+const _UPDATE_PT_S0 = (-2.0, 0.0, 0.0, -1.0)
+
+function _update_erlang(θ)
+    return _pt_survival(PhaseType(update(_UPDATE_ERLANG_L, exp.(θ))), 5.0)
+end
+
+function _update_coxian(θ)
+    return _pt_survival(PhaseType(update(_UPDATE_COXIAN_L, exp.(θ))), 5.0)
+end
+
+function _update_ctmc(θ)
+    return transition_probability(update(_UPDATE_CTMC_L, exp.(θ)), 2.0)[1, 3]
+end
+
+function _update_phasetype(θ)
+    α0 = [_UPDATE_PT_ALPHA0[1], _UPDATE_PT_ALPHA0[2]]
+    S0 = [_UPDATE_PT_S0[1] _UPDATE_PT_S0[3]; _UPDATE_PT_S0[2] _UPDATE_PT_S0[4]]
+    w = α0 .* exp.(θ[1] .* [1.0, -1.0])
+    α = w ./ sum(w)
+    S = S0 .* exp(θ[2])
+    return _pt_survival(update(_UPDATE_PT_L, vcat(α, vec(S))), 5.0)
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -303,6 +374,34 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             res1 = with_reference ?
                    _reference(_fixed_k_survival, θ9, ()) : nothing))
 
+    θ10 = [log(0.7)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_erlang, θ10;
+            name = UPDATE_ERLANG,
+            res1 = with_reference ? _reference(_update_erlang, θ10, ()) :
+                   nothing))
+
+    θ11 = log.([1.0, 2.0, 3.0])
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_coxian, θ11;
+            name = UPDATE_COXIAN,
+            res1 = with_reference ? _reference(_update_coxian, θ11, ()) :
+                   nothing))
+
+    θ12 = log.([1.0, 1.0, 1.0])
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_ctmc, θ12;
+            name = UPDATE_CTMC,
+            res1 = with_reference ? _reference(_update_ctmc, θ12, ()) :
+                   nothing))
+
+    θ13 = [0.0, 0.0]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_phasetype, θ13;
+            name = UPDATE_PHASETYPE,
+            res1 = with_reference ? _reference(_update_phasetype, θ13, ()) :
+                   nothing))
+
     return out
 end
 
@@ -380,13 +479,30 @@ differentiable).
 through `lower(dist, PhaseType)`, which returns one concrete type on both sides
 of the `c²` branch whatever the value — so it differentiates even when the
 structural parameter is not fixed, without relying on the branch folding.
+
+[`UPDATE_PHASETYPE`](@ref) is broken on `ReverseDiff (tape)` only — every other
+backend (ForwardDiff, Enzyme forward AND reverse, Mooncake forward AND
+reverse) is clean and matches the ForwardDiff reference exactly (issue #75's
+acceptance bar is Enzyme forward + reverse per lowered type, which this
+satisfies). The break is a ReverseDiff.jl library limitation, not a bug in
+`update`/`PhaseType`: `α = x[1:k]` inside `update(::PhaseType, ::AbstractVector)`
+produces a plain `Vector{TrackedReal}` (element-tracked, not a `TrackedArray`),
+and `_pt_survival`'s `transpose(pt.α) * _matrix_exp(...)` then hits a
+dimension-mismatch bug in ReverseDiff's own `reverse_mul!` for
+`Transpose{TrackedReal}` against a `TrackedArray`-wrapped matrix — reproduced
+directly, isolated from `update`'s own correctness (which was separately
+verified via a hand-built PhaseType with the SAME construction pattern,
+differentiating cleanly on every backend). Fitting code that needs
+ReverseDiff for a raw-entry `PhaseType` should differentiate via one of the
+other five backends, or prefer `ErlangChain`/`Coxian`/`CTMC`, all clean on
+ReverseDiff too.
 """
 function backend_broken_scenarios()
     ctmc_builder_broken = Set{String}([CTMC_BUILDER])
     ode_broken = Set{String}([ODE_SURVIVAL, ODE_SURVIVAL_DIRECT])
     return Dict{String, Set{String}}(
         "ForwardDiff" => Set{String}(),
-        "ReverseDiff (tape)" => copy(ode_broken),
+        "ReverseDiff (tape)" => union(ode_broken, Set{String}([UPDATE_PHASETYPE])),
         "Mooncake reverse" => copy(ode_broken),
         "Mooncake forward" => copy(ode_broken),
         "Enzyme reverse" => union(ctmc_builder_broken, ode_broken),

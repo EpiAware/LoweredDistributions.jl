@@ -31,6 +31,16 @@ The keys are per lowered type:
 
   - `l`: the lowered object to read parameters from.
 
+# Examples
+
+```@example
+using LoweredDistributions, Distributions
+
+e = lower(Gamma(3.0, 1.0))          # a 3-stage ErlangChain, structure fixed
+parameters(e)                       # (; rates = [...])
+update(e, parameters(e)) == e       # the round-trip invariant
+```
+
 # See also
 
   - [`update`](@ref): the structure-preserving rebuild this inverts.
@@ -154,10 +164,20 @@ function update(m::CTMC, rates::AbstractVector)
     # Rebuild the generator directly (NOT via `ctmc(specs...)`, whose Pair
     # vararg parsing does not differentiate under Enzyme): a plain typed matrix
     # with the diagonal recomputed as the negated row sum keeps every backend.
-    Q = zeros(T, n, n)
-    for (e, (i, j)) in enumerate(ix)
-        Q[i, j] = rates[e]
+    #
+    # Off-diagonals via a comprehension rather than `zeros(T, dims...)`
+    # mutated in place: for an abstractly-typed `rates`, `T = eltype(rates)` is
+    # not concrete, and `zeros(T, n, n)` then infers to a dimensionality-
+    # uncertain `Array` (JET reports a spurious `CTMC(::Tuple, ::Array{Float64,
+    # 3})` no-matching-method at the constructor call). A comprehension's rank
+    # is fixed by its loop shape, so the generator is always a `Matrix`. A
+    # linear scan over `ix` (not a `Dict` lookup: `Dict` construction with
+    # active values is not Enzyme-differentiable) finds each entry's rate.
+    off_diag(i, j) = begin
+        e = findfirst(==((i, j)), ix)
+        e === nothing ? zero(T) : rates[e]
     end
+    Q = [i == j ? zero(T) : off_diag(i, j) for i in 1:n, j in 1:n]
     for i in 1:n
         Q[i, i] = -sum(Q[i, j] for j in 1:n if j != i; init = zero(T))
     end
