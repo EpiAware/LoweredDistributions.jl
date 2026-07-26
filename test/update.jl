@@ -77,6 +77,23 @@ end
     @test_throws ArgumentError update(ct, [1.0, 2.0, 3.0])
     pt = lower(Gamma(0.5, 1.0), PhaseType)
     @test_throws ArgumentError update(pt, [1.0])
+    # One rate per phase; the continue/absorb probs are structure, not input.
+    @test_throws ArgumentError update(Coxian([1.0, 2.0], [1.0, 0.0]), [0.5])
+end
+
+@testitem "update/parameters refuse a lowering with no rule" begin
+    using LoweredDistributions, Test
+    using LoweredDistributions: AbstractLowering
+
+    # A lowering this package defines no rebuild for. Both verbs must say so
+    # plainly rather than guess at a structure they do not know — the contract
+    # a new lowering type has to satisfy before it can be `update`d.
+    struct UnruledLowering <: AbstractLowering end
+
+    l = UnruledLowering()
+    @test_throws ArgumentError update(l, (; rates = [1.0]))
+    @test_throws ArgumentError update(l, [1.0])
+    @test_throws ArgumentError parameters(l)
 end
 
 @testitem "update differentiates through on ForwardDiff (per lowered type)" begin
