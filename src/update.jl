@@ -174,15 +174,24 @@ function update(m::CTMC, rates::AbstractVector)
     # vararg parsing does not differentiate under Enzyme), with the diagonal
     # recomputed as the negated row sum.
     #
-    # Built with comprehensions rather than `zeros(T, n, n)` plus mutation: for
-    # a non-concrete `T` — exactly the AD case, where a rate carries a dual —
-    # `zeros(T, dims...)` infers to a dimensionality-uncertain `Array`, and JET
-    # then reports a spurious `CTMC(::Tuple, ::Array{Float64, 3})` no-matching-
-    # method at the constructor call. A comprehension's rank is fixed by its
-    # loop shape, so the generator is always a `Matrix`. This is the same fix
-    # `PhaseType(::Coxian)` already carries.
-    offdiag = [i == j ? zero(T) : _ctmc_rate_at(ix, rates, i, j) for i in 1:n, j in 1:n]
-    Q = [i == j ? -sum(view(offdiag, i, :)) : offdiag[i, j] for i in 1:n, j in 1:n]
+    # Built with ELEMENT-TYPED comprehensions rather than `zeros(T, n, n)` plus
+    # mutation. Both halves of that matter, and for different checks:
+    #
+    #   - a comprehension instead of `zeros`: for a non-concrete `T` — exactly
+    #     the AD case, where a rate carries a dual — `zeros(T, dims...)` infers
+    #     to a dimensionality-uncertain `Array`, and JET then reports a spurious
+    #     `CTMC(::Tuple, ::Array{Float64, 3})` no-matching-method at the
+    #     constructor call. A comprehension's rank is fixed by its loop shape,
+    #     so the generator is always a `Matrix`. Same fix `PhaseType(::Coxian)`
+    #     already carries.
+    #   - the leading `T`: an untyped comprehension leaves the ELEMENT type to
+    #     be inferred from the body, which Julia 1.11 (this package's lower
+    #     bound) widens to `Matrix` — enough for JET, but it loses the
+    #     `@inferred` type-stability guarantee the tests assert. Naming `T`
+    #     pins the eltype by construction, so the result is a `Matrix{T}` on
+    #     every supported version.
+    offdiag = T[i == j ? zero(T) : _ctmc_rate_at(ix, rates, i, j) for i in 1:n, j in 1:n]
+    Q = T[i == j ? -sum(view(offdiag, i, :)) : offdiag[i, j] for i in 1:n, j in 1:n]
     return CTMC(m.states, Q)
 end
 
