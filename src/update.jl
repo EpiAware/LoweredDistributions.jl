@@ -31,6 +31,16 @@ The keys are per lowered type:
 
   - `l`: the lowered object to read parameters from.
 
+# Examples
+
+```@example
+using LoweredDistributions, Distributions
+
+e = lower(Gamma(3.0, 1.0))      # a 3-stage ErlangChain, structure fixed
+parameters(e)                   # (; rates = [...]) — the per-stage rates
+update(e, parameters(e)) == e   # the round-trip this pairs with
+```
+
 # See also
 
   - [`update`](@ref): the structure-preserving rebuild this inverts.
@@ -143,6 +153,15 @@ end
 
 parameters(m::CTMC) = (; rates = [m.Q[i, j] for (i, j) in _ctmc_transitions(m)])
 
+# The new rate for position `(i, j)`, or zero where that transition is absent.
+# A linear scan over the (short) transition list keeps this differentiable and
+# type-stable — both branches return an `eltype(rates)` — where a Dict lookup
+# would not.
+function _ctmc_rate_at(ix, rates::AbstractVector, i::Int, j::Int)
+    e = findfirst(==((i, j)), ix)
+    return e === nothing ? zero(eltype(rates)) : rates[e]
+end
+
 function update(m::CTMC, rates::AbstractVector)
     ix = _ctmc_transitions(m)
     length(rates) == length(ix) || throw(ArgumentError(
@@ -152,15 +171,18 @@ function update(m::CTMC, rates::AbstractVector)
     n = length(m.states)
     T = eltype(rates)
     # Rebuild the generator directly (NOT via `ctmc(specs...)`, whose Pair
-    # vararg parsing does not differentiate under Enzyme): a plain typed matrix
-    # with the diagonal recomputed as the negated row sum keeps every backend.
-    Q = zeros(T, n, n)
-    for (e, (i, j)) in enumerate(ix)
-        Q[i, j] = rates[e]
-    end
-    for i in 1:n
-        Q[i, i] = -sum(Q[i, j] for j in 1:n if j != i; init = zero(T))
-    end
+    # vararg parsing does not differentiate under Enzyme), with the diagonal
+    # recomputed as the negated row sum.
+    #
+    # Built with comprehensions rather than `zeros(T, n, n)` plus mutation: for
+    # a non-concrete `T` — exactly the AD case, where a rate carries a dual —
+    # `zeros(T, dims...)` infers to a dimensionality-uncertain `Array`, and JET
+    # then reports a spurious `CTMC(::Tuple, ::Array{Float64, 3})` no-matching-
+    # method at the constructor call. A comprehension's rank is fixed by its
+    # loop shape, so the generator is always a `Matrix`. This is the same fix
+    # `PhaseType(::Coxian)` already carries.
+    offdiag = [i == j ? zero(T) : _ctmc_rate_at(ix, rates, i, j) for i in 1:n, j in 1:n]
+    Q = [i == j ? -sum(view(offdiag, i, :)) : offdiag[i, j] for i in 1:n, j in 1:n]
     return CTMC(m.states, Q)
 end
 
