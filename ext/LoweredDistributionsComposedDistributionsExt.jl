@@ -70,10 +70,27 @@ function _phasetype(m::CTMC)
         "only the two-state Exponential CTMC folds into a phase-type; a " *
         "$(n)-state CTMC from Parallel or Choose has no scalar phase-type " *
         "form, so it cannot nest inside a scalar composition"))
-    return PhaseType([1.0], reshape([float(m.Q[1, 1])], 1, 1))
+    q = m.Q[1, 1]
+    T = _promoted(typeof(q))
+    return PhaseType([one(T)], fill(convert(T, q), 1, 1))
 end
 
-_pair(p::PhaseType) = (collect(float.(p.α)), Matrix{Float64}(float.(p.S)))
+# Element type every composition assembles in: the widest of the parts,
+# floated. `promote_type(..., Float64)` is the package's own idiom (see
+# `src/convolve.jl` and `_matrix_exp` in `src/ctmc.jl`) and is what keeps a
+# differentiated component rate alive — an AD dual promotes with `Float64` to
+# itself, so it carries through the assembly instead of being truncated by a
+# concrete `Float64` buffer.
+_promoted(Ts::Type...) = promote_type(Ts..., Float64)
+_eltypes(xs...) = _promoted(map(eltype, xs)...)
+
+# The element type of an already-canonicalised `(α, S)` pair.
+_pair_eltype((α, S)) = _eltypes(α, S)
+
+function _pair(p::PhaseType)
+    T = _eltypes(p.α, p.S)
+    return (collect(T.(p.α)), Matrix{T}(p.S))
+end
 
 # The per-phase exit rate to absorption is the row shortfall of the
 # sub-generator.
@@ -98,9 +115,10 @@ end
 
 function _series((αa, Sa), (αb, Sb))
     ka, kb = length(αa), length(αb)
+    T = _eltypes(αa, Sa, αb, Sb)
     sa = _exit(Sa)
-    α = vcat(αa, zeros(kb))
-    S = zeros(ka + kb, ka + kb)
+    α = vcat(T.(αa), zeros(T, kb))
+    S = zeros(T, ka + kb, ka + kb)
     S[1:ka, 1:ka] .= Sa
     # a's exit feeds the start of b (the outer product of the exit rates and αb).
     S[1:ka, (ka + 1):end] .= sa .* reshape(αb, 1, kb)
@@ -128,11 +146,13 @@ function lower(d::Resolve)
 end
 
 function _mixture(weights, pairs)
-    α = Float64[]
+    T = reduce(promote_type, map(_pair_eltype, pairs);
+        init = _eltypes(weights))
+    α = T[]
     for (w, (αi, _)) in zip(weights, pairs)
         append!(α, w .* αi)
     end
-    return (α, _blockdiag([S for (_, S) in pairs]))
+    return (α, _blockdiag(T, [S for (_, S) in pairs]))
 end
 
 # --- Compete: competing-risks minimum ---------------------------------------
@@ -154,8 +174,9 @@ end
 
 function _min((αa, Sa), (αb, Sb))
     ka, kb = length(αa), length(αb)
-    α = _kron(αa, αb)
-    S = zeros(ka * kb, ka * kb)
+    T = _eltypes(αa, Sa, αb, Sb)
+    α = T.(_kron(αa, αb))
+    S = zeros(T, ka * kb, ka * kb)
     # (i, j) -> row (i - 1) * kb + j; exit when either sub-chain exits.
     for i in 1:ka
         for j in 1:kb
@@ -213,9 +234,10 @@ end
 # its state names, tagged with the branch name so the joint states stay unique.
 function _full_block(x, name::Symbol)
     α, S = _canonical(x)
+    T = _eltypes(α, S)
     k = length(α)
     s = _exit(S)
-    G = zeros(k + 1, k + 1)
+    G = zeros(T, k + 1, k + 1)
     G[1:k, 1:k] .= S
     for i in 1:k
         G[i, k + 1] = s[i]
@@ -235,8 +257,9 @@ end
 
 function _kron_sum((na, Ga), (nb, Gb))
     ka, kb = length(na), length(nb)
+    T = _eltypes(Ga, Gb)
     names = Symbol[Symbol(a, :__, b) for a in na for b in nb]
-    G = zeros(ka * kb, ka * kb)
+    G = zeros(T, ka * kb, ka * kb)
     for i in 1:ka
         for j in 1:kb
             r = (i - 1) * kb + j
@@ -254,7 +277,8 @@ end
 function _blockdiag_ctmc(blocks)
     names = reduce(vcat, first.(blocks))
     total = length(names)
-    G = zeros(total, total)
+    T = _promoted(map(b -> eltype(last(b)), blocks)...)
+    G = zeros(T, total, total)
     offset = 0
     for (nb, Gb) in blocks
         k = length(nb)
@@ -268,9 +292,9 @@ end
 
 _kron(a::AbstractVector, b::AbstractVector) = [x * y for x in a for y in b]
 
-function _blockdiag(mats)
+function _blockdiag(T::Type, mats)
     total = sum(size(m, 1) for m in mats)
-    out = zeros(total, total)
+    out = zeros(T, total, total)
     offset = 0
     for m in mats
         k = size(m, 1)
