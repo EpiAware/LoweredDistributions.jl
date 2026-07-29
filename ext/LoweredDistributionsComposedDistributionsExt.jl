@@ -55,6 +55,18 @@ using LoweredDistributions: AbstractLowering, AbstractChainTrick, PhaseType,
 # through the methods below) and then canonicalised.
 _canonical(x) = _pair(_phasetype(lower(x)))
 
+# Element type every composition assembles in: the widest of the parts,
+# floated. `promote_type(..., Float64)` is the package's own idiom (see
+# `src/convolve.jl` and `_matrix_exp` in `src/ctmc.jl`) and is what keeps a
+# differentiated component rate alive — an AD dual promotes with `Float64` to
+# itself, so it carries through the assembly instead of being truncated by a
+# concrete `Float64` buffer.
+_promoted(Ts::Type...) = promote_type(Ts..., Float64)
+_eltypes(xs...) = _promoted(map(eltype, xs)...)
+
+# The element type of an already-canonicalised `(α, S)` pair.
+_pair_eltype((α, S)) = _eltypes(α, S)
+
 _phasetype(p::PhaseType) = p
 _phasetype(c::AbstractChainTrick) = PhaseType(c)
 
@@ -74,18 +86,6 @@ function _phasetype(m::CTMC)
     T = _promoted(typeof(q))
     return PhaseType([one(T)], fill(convert(T, q), 1, 1))
 end
-
-# Element type every composition assembles in: the widest of the parts,
-# floated. `promote_type(..., Float64)` is the package's own idiom (see
-# `src/convolve.jl` and `_matrix_exp` in `src/ctmc.jl`) and is what keeps a
-# differentiated component rate alive — an AD dual promotes with `Float64` to
-# itself, so it carries through the assembly instead of being truncated by a
-# concrete `Float64` buffer.
-_promoted(Ts::Type...) = promote_type(Ts..., Float64)
-_eltypes(xs...) = _promoted(map(eltype, xs)...)
-
-# The element type of an already-canonicalised `(α, S)` pair.
-_pair_eltype((α, S)) = _eltypes(α, S)
 
 function _pair(p::PhaseType)
     T = _eltypes(p.α, p.S)
