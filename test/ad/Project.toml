@@ -5,6 +5,7 @@
 [deps]
 ADFixtures = "41449461-b2c2-488a-a321-893cd7010c89"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+ComposedDistributions = "2f642b71-32a9-4f47-97c4-6deb7517f7a7"
 DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 DifferentiationInterfaceTest = "a82114a7-5aa3-49a8-9643-716bb13727a3"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
@@ -20,6 +21,10 @@ LoweredDistributions = "8539b7eb-0b85-40d0-a8a6-65093c3d0137"
 [sources]
 ADFixtures = {path = "../ADFixtures"}
 LoweredDistributions = {path = "../.."}
+# ComposedDistributions is unregistered; pinned by git until it registers (the
+# same pin test/Project.toml carries). Needed here so the composed-lowering AD
+# scenarios can load the composer bridge extension.
+ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
 # Until EpiAwarePackageTools is registered, it is pinned by git so the env
 # resolves out of the box. Switch to a local path if you develop the kit
 # alongside this package.

@@ -47,6 +47,14 @@
 #     dual, and `lower`'s hyperexponential arm returns a concrete `PhaseType`
 #     directly (no `phase_type` `Union` leak), so the `c² > 1` path no longer
 #     trips Enzyme's type analysis.
+#   - `composed_scalar` / `composed_joint`: the composer methods of `lower`
+#     (the ComposedDistributions extension), which had no AD coverage at all
+#     before issue #97 — the reason that issue's `Float64` hard-cast went
+#     unnoticed. `composed_scalar` folds a `resolve` and a `compete` through a
+#     `sequential` into one phase-type and reads its survival, so the series,
+#     mixture and competing-risks assemblers are all on the differentiated
+#     path; `composed_joint` differentiates `transition_probability` through
+#     the joint CTMCs `parallel` and `choose` lower to.
 #   - `canonical_erlang` / `canonical_h2`: the same survival through
 #     `lower(dist, PhaseType)`, the unconditionally type-stable canonical
 #     lowering (concrete whatever the value, so it does not rely on the branch
@@ -66,7 +74,8 @@ using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
 using DifferentiationInterface: DifferentiationInterface, Constant
 import DifferentiationInterfaceTest as DIT
 import ForwardDiff, ReverseDiff, Mooncake, Enzyme
-using Distributions: Gamma
+using Distributions: Gamma, Exponential
+using ComposedDistributions: sequential, resolve, compete, parallel, choose
 using SciMLBase: solve
 using OrdinaryDiffEqTsit5: Tsit5
 using LoweredDistributions
@@ -85,6 +94,8 @@ const ADAPTIVE_ERLANG_NONINT = "lower(dist) adaptive Erlang survival gradient (n
 const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
 const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
+const COMPOSED_SCALAR = "lower(composer) scalar-composer survival gradient"
+const COMPOSED_JOINT = "lower(composer) joint-CTMC transition gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -220,6 +231,41 @@ function _fixed_k_survival(θ)
         lower(Gamma(exp(θ[1]), 1.0), PhaseType; phases = 5), 5.0)
 end
 
+# The composer methods of `lower` (the ComposedDistributions extension), which
+# had no AD coverage at all until issue #97: every one of them canonicalised
+# each component to a concrete `Matrix{Float64}` and assembled into untyped
+# `zeros`, so a differentiated component rate hit
+# `MethodError: Float64(::Dual)`. Two scenarios cover the two lowering shapes.
+#
+# The scalar composers, which fold into one phase-type. `sequential` of a
+# `resolve` and a `compete` puts all three scalar assemblers on the
+# differentiated path in one gradient (the series block, the hyper-phase-type
+# mixture and its block-diagonal, and the competing-risks Kronecker sum), on
+# top of the canonicalisation they share. The structure is fixed and only the
+# rates move, so as with the `adaptive_*` scenarios no phase count depends on
+# θ; `exp(θ[1])` keeps every scale positive at the θ = 0 probe the
+# Enzyme/Mooncake/ReverseDiff rule preparation evaluates the closure at.
+function _composed_scalar_survival(θ)
+    d = sequential(
+        resolve(:a => (Exponential(exp(θ[1])), 0.3),
+            :b => (Exponential(5.0), 0.7)),
+        compete(:c => Exponential(2.0), :d => Exponential(exp(θ[1]))))
+    return _pt_survival(lower(d), 5.0)
+end
+
+# The vector composers, which lower to a joint CTMC rather than a phase-type,
+# read through the package's own matrix exponential. `parallel` covers the
+# Kronecker-sum generator over the product state space (`[1, end]` is the
+# probability both branches have absorbed by t = 5) and `choose` covers the
+# block-diagonal union (`[1, 2]` is the first alternative's own absorption, the
+# only θ-dependent entry — the block-diagonal row sums are constant).
+function _composed_joint_transition(θ)
+    p = lower(parallel(:a => Exponential(exp(θ[1])), :b => Exponential(3.0)))
+    c = lower(choose(:a => Exponential(exp(θ[1])), :b => Exponential(3.0)))
+    return transition_probability(p, 5.0)[1, end] +
+           transition_probability(c, 5.0)[1, 2]
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -303,6 +349,20 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             res1 = with_reference ?
                    _reference(_fixed_k_survival, θ9, ()) : nothing))
 
+    θ10 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_composed_scalar_survival, θ10;
+            name = COMPOSED_SCALAR,
+            res1 = with_reference ?
+                   _reference(_composed_scalar_survival, θ10, ()) : nothing))
+
+    θ11 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_composed_joint_transition, θ11;
+            name = COMPOSED_JOINT,
+            res1 = with_reference ?
+                   _reference(_composed_joint_transition, θ11, ()) : nothing))
+
     return out
 end
 
@@ -380,6 +440,13 @@ differentiable).
 through `lower(dist, PhaseType)`, which returns one concrete type on both sides
 of the `c²` branch whatever the value — so it differentiates even when the
 structural parameter is not fixed, without relying on the branch folding.
+
+[`COMPOSED_SCALAR`](@ref) and [`COMPOSED_JOINT`](@ref) are clean on every
+backend, Enzyme forward and reverse included, once the composer lowering
+promotes its `(α, S)` element type instead of casting to `Float64` (issue #97).
+Neither goes near an ODE solve, so they isolate the composed lowering's
+differentiability the way the `adaptive_*` scenarios isolate the leaf
+lowering's.
 """
 function backend_broken_scenarios()
     ctmc_builder_broken = Set{String}([CTMC_BUILDER])
