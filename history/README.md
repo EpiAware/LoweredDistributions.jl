@@ -1,6 +1,6 @@
 # LoweredDistributions.jl benchmark history
 
-Revisions: 3db79a680b8e9802f1dd076f32f57b7c53d78159
+Revisions: f939f0cc8fc1d1c23d5bd6b26fd2b1c31939a352
 
 See `table.md` for the ratio summary and the PNG
 files in this folder for per-benchmark timelines.
