@@ -1,30 +1,8 @@
-# PACKAGE-OWNED — scaffold writes this once and never overwrites it.
-# The documentation environment: Documenter + DocumenterVitepress (the org docs
-# standard). Add doc-only deps (e.g. plotting, DocumenterCitations) here as the
-# docs grow. The package itself is pinned by path via `[sources]`.
-# The managed `docs/make.jl` calls `using EpiAwarePackageTools` (the shared docs
-# build machinery), so the kit is a docs dep too; until it is registered it is
-# pinned by git via `[sources]` (empty for the kit itself, which is the
-# package).
-#
-# The tutorial exercises three of the four backend extensions in this
-# environment (Catalyst, SciMLBase + OrdinaryDiffEqTsit5, JumpProcesses).
-# AlgebraicPetri is deliberately absent: AlgebraicPetri 0.10's own Catalyst
-# weakdep extension caps Catalyst at "13", which cannot resolve against this
-# package's `Catalyst = "16"` compat, so the two never coexist in one
-# environment. The tutorial's Petri section runs in the isolated
-# `docs/algebraic_petri` environment instead (the same split `test/` uses).
-#
-# AlgebraOfGraphics + CairoMakie + DataFramesMeta plot what each lowering
-# produces (density/pmf/trajectories against the exact distribution, #68).
-# ComposedDistributions and ModifiedDistributions are the composing-delays
-# tutorial's round-trip example (#69): LoweredDistributions hosts both of
-# their lowering bridges (LD#51), so lowering a composed/modified tree needs
-# both loaded here.
 [deps]
 AlgebraOfGraphics = "cbdf2221-f076-402e-a563-3d30da359d67"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Catalyst = "479239e8-5488-4da2-87a7-35f2df7eef83"
+Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
 ComposedDistributions = "2f642b71-32a9-4f47-97c4-6deb7517f7a7"
 ConvolvedDistributions = "f5b942c9-bc5b-4664-8486-7f531bb06742"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
@@ -46,20 +24,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [sources]
 LoweredDistributions = {path = ".."}
-# Until EpiAwarePackageTools is registered, it is pinned by git so
-# the env resolves out of the box. Switch to a local path to
-# develop the kit alongside this package.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions resolves from the registry rather than a git pin.
-# Every registered version from 0.2.0 on carries the public `components`
-# accessor the composing-delays tutorial uses; the compat above admits the
-# current 0.3.0. EpiAwareADTools remains pinned below as a direct docs dep
-# in its own right, unregistered.
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
-# ComposedDistributions and ModifiedDistributions (the composing-delays
-# tutorial's round-trip example, #69) are unregistered, so both are pinned by
-# git; each must be a direct dep here because `[sources]` entries only apply
-# to the active project's direct dependencies.
 ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
 ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "main"}
 

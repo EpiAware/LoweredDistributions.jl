@@ -65,23 +65,7 @@ TestItems = "1"
 
 [sources]
 LoweredDistributions = {path = ".."}
-# ModifiedDistributions is unregistered; pinned by git until it registers.
-# Its reverse lowering extension is gone (its removal PR merged) — this
-# package hosts the modifier lower() bridge (#51).
 ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "main"}
-# ComposedDistributions is unregistered; pinned by git until it registers.
-# Its reverse lowering extension is gone (its removal PR merged) — this
-# package hosts the composer lower() bridge (#51).
 ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
-# Until EpiAwarePackageTools is registered, it is pinned by git so the env
-# resolves out of the box. Switch to a local path if you develop the kit
-# alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions resolves from the registry, not a git pin. Its
-# current release is 0.3.0, admitted by the compat above. This env still
-# resolves 0.2.0 in practice because ComposedDistributions and
-# ModifiedDistributions (both git-pinned to main) still cap it; once their
-# own bounds widen, the extension gets exercised against 0.3 here.
-# EpiAwareADTools remains pinned below as a direct test dep in its own
-# right, unregistered.
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
