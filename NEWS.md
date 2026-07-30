@@ -1,5 +1,11 @@
 ## Unreleased
 
+- **fix:** `ConvolvedDistributions` compat now admits 0.3 (#99). The old
+  `"0.2, 1"` bound covered [0.2.0, 0.3.0) and [1.0.0, 2.0.0), so the released
+  0.3.0 satisfied neither and any environment resolving both packages failed
+  outright. A bound widening only: the bridge uses `Convolved`, `Difference`,
+  `Product` and `components`, all unchanged in 0.3.
+
 - **fix:** the composer methods of `lower` are now differentiable (#97).
   Every one of them canonicalised each component to a concrete
   `Matrix{Float64}` and assembled into untyped `zeros`, so
