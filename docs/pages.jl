@@ -20,7 +20,7 @@ pages = [
             "Catalyst: reaction networks" => "getting-started/tutorials/backend-catalyst.md",
             "JumpProcesses: stochastic simulation" => "getting-started/tutorials/backend-jump.md",
             "AlgebraicPetri: Petri nets" => "getting-started/tutorials/backend-petri.md",
-            "Composing delays: convolution" => "getting-started/tutorials/composing-delays.md"
+            "Composing delays" => "getting-started/tutorials/composing-delays.md"
         ],
         "Fitting under AD (Turing)" => "getting-started/tutorials/fitting-ad-stable.md"
     ],

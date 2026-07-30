@@ -1,5 +1,21 @@
 ## Unreleased
 
+- **fix:** `ConvolvedDistributions` compat now admits 0.3 (#99). The old
+  `"0.2, 1"` bound covered [0.2.0, 0.3.0) and [1.0.0, 2.0.0), so the released
+  0.3.0 satisfied neither and any environment resolving both packages failed
+  outright. A bound widening only: the bridge uses `Convolved`, `Difference`,
+  `Product` and `components`, all unchanged in 0.3.
+
+- **fix:** the composer methods of `lower` are now differentiable (#97).
+  Every one of them canonicalised each component to a concrete
+  `Matrix{Float64}` and assembled into untyped `zeros`, so
+  `lower(sequential(...))` and the other four composer paths computed a value
+  but threw `MethodError: Float64(::Dual)` under AD. The element type is now
+  promoted through the assembly, as `_convolve_two` and `_matrix_exp` already
+  do. Two AD-fixture scenarios cover the composed lowering (the scalar
+  composers' phase-type and the vector composers' joint CTMC), which nothing
+  did before — the reason this went unnoticed.
+
 - **fix:** one-argument `lower(d)` is now AD-stable on the Erlang path (#73).
   `ChainStage` carries its rate's element type through `Coxian` and
   `PhaseType`, so the `c² ≤ 1` Erlang lowering differentiates on every backend

@@ -13,19 +13,24 @@
 # cheap tutorials here.
 #
 # `lowering-backends.jl` is the lowering overview and `fitting-ad-stable.jl` the
-# AD-stable-fitting page: both only load LoweredDistributions + Distributions
-# (plus ForwardDiff for the gradient demo), so they run in-process. The
-# per-backend pages that load a heavy backend are `HEAVY_TUTORIALS` below.
+# AD-stable-fitting page: neither loads a heavy simulation backend (Catalyst /
+# SciMLBase / JumpProcesses / AlgebraicPetri), so both run in-process. Since
+# LD#68, `lowering-backends.jl` also loads CairoMakie + AlgebraOfGraphics +
+# DataFramesMeta for its faithfulness plots — plotting deps alone do not make
+# a tutorial heavy, matching ModifiedDistributions.jl's `composed-chains.jl`
+# precedent. The per-backend pages that load a heavy backend are
+# `HEAVY_TUTORIALS` below.
 const LIGHT_TUTORIALS = ["lowering-backends.jl", "fitting-ad-stable.jl"]
 
 # `ad-backends.jl` (the kit-managed AD-backends page, also under
 # `TUTORIALS_SUBDIR`) is deliberately absent from every list below, so it does
-# not render. It needs ~9 extra docs deps (Enzyme, Mooncake, CairoMakie,
-# AlgebraOfGraphics, DataFramesMeta, ...) that are not yet in
-# `docs/Project.toml`, is a material docs-build-time change on its own, and
-# the sibling ComposedDistributions.jl hit an actual resolution failure
-# adding the same page (AlgebraOfGraphics pins DimensionalData incompatibly
-# with the rest of the docs env). Tracked in
+# not render. CairoMakie, AlgebraOfGraphics and DataFramesMeta are now in
+# `docs/Project.toml` (LD#68), but it still needs Enzyme and Mooncake on top,
+# is a material docs-build-time change on its own, and the sibling
+# ComposedDistributions.jl hit an actual resolution failure adding the same
+# page (AlgebraOfGraphics pins DimensionalData incompatibly with the rest of
+# the docs env) — worth re-checking now the other three plotting deps resolve
+# cleanly here, but not re-tested as part of LD#68. Tracked in
 # https://github.com/EpiAware/LoweredDistributions.jl/issues/34; wire it in
 # there, not here.
 
@@ -59,7 +64,7 @@ const TUTORIAL_STUBS = [
     "backend-catalyst.md" => "# [Catalyst: the reaction-network view](@id backend-catalyst)",
     "backend-jump.md" => "# [JumpProcesses: the exact stochastic view](@id backend-jump)",
     "backend-petri.md" => "# [AlgebraicPetri: the Petri-net view](@id backend-petri)",
-    "composing-delays.md" => "# [Composing delays: convolution](@id composing-delays)"
+    "composing-delays.md" => "# [Composing delays](@id composing-delays)"
 ]
 
 # Heavy tutorials that always render from their `TUTORIAL_STUBS` heading and
