@@ -8,11 +8,7 @@
 # the exported surface stays to the concrete, user-facing names.
 public AbstractLowering, AbstractChainTrick
 
-# The refit verbs. `update(lowered, params)` rebuilds a lowering with new
-# continuous parameters while holding its structure fixed; `parameters` is the
-# read-back pair. Public but NOT exported, matching ComposedDistributions'
-# choice for its own `update` (CD#221): several packages in this ecosystem
-# carry an `update`-shaped verb, and exporting a same-named generic from more
-# than one of them makes a bare `update` ambiguous under `using` both. Callers
-# qualify — `LoweredDistributions.update(...)`.
+# The refit verbs. Not exported: `parameters` clashes with
+# ModelingToolkitBase's, and ComposedDistributions made the same call for its
+# own `update` (CD#221). Callers qualify.
 public update, parameters
