@@ -79,6 +79,7 @@ using ComposedDistributions: sequential, resolve, compete, parallel, choose
 using SciMLBase: solve
 using OrdinaryDiffEqTsit5: Tsit5
 using LoweredDistributions
+using LoweredDistributions: update, parameters  # public, not exported
 
 export scenarios, backends, broken_scenario_names,
        backend_broken_scenarios, backend_skip_scenarios
@@ -96,6 +97,10 @@ const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
 const COMPOSED_SCALAR = "lower(composer) scalar-composer survival gradient"
 const COMPOSED_JOINT = "lower(composer) joint-CTMC transition gradient"
+const UPDATE_ERLANG = "update(ErlangChain, rates) survival gradient"
+const UPDATE_COXIAN = "update(Coxian, rates) survival gradient"
+const UPDATE_PHASE_TYPE = "update(PhaseType, [α; vec(S)]) survival gradient"
+const UPDATE_CTMC = "update(CTMC, rates) transition gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -266,6 +271,48 @@ function _composed_joint_transition(θ)
            transition_probability(c, 5.0)[1, 2]
 end
 
+# The `update` verb (#75): a fitting loop lowers once to fix the structure,
+# then rebuilds only the continuous parameters under the sampler. Every
+# scenario above differentiates `lower` itself, so none of them would catch a
+# break here. Each closure builds its structure from literals, so only the
+# rates carry the dual.
+
+# `ErlangChain`: per-stage rates.
+function _update_erlang_survival(θ)
+    e = lower(Gamma(3.0, 1.0))
+    return _pt_survival(PhaseType(update(e, [exp(θ[1])])), 5.0)
+end
+
+# `Coxian`: per-phase rates, continue/absorb probabilities structural.
+function _update_coxian_survival(θ)
+    c = Coxian([1.0, 2.0], [0.4, 0.0])
+    return _pt_survival(
+        PhaseType(update(c, [exp(θ[1]), exp(θ[2])])), 5.0)
+end
+
+# `PhaseType`: raw `[α; vec(S)]`. `update` reshapes S column-major, so the
+# entries run down each column to build the chain `[-r1 r1; 0 -r2]`; a
+# row-major vector would leave phase 2 unreachable and r2's gradient zero.
+function _update_phase_type_survival(θ)
+    p = PhaseType([1.0, 0.0], [-2.0 2.0; 0.0 -3.0])
+    r1, r2 = exp(θ[1]), exp(θ[2])
+    return _pt_survival(
+        update(p, [1.0, 0.0, -r1, zero(r1), r1, -r2]), 5.0)
+end
+
+# `CTMC`: existing off-diagonals, row-major. `update` rebuilds Q directly, so
+# unlike `_ctmc_builder_nll` this is clean on Enzyme — hence the direct
+# `CTMC(states, Q)` constructor here, since `ctmc(specs...)` would put the
+# very construct this bypasses back on the differentiated path.
+function _update_ctmc_transition(θ)
+    Q = [-0.5 0.5 0.0
+         0.2 -0.3 0.1
+         0.0 0.0 0.0]
+    m = CTMC((:well, :ill, :dead), Q)
+    return transition_probability(
+        update(m, [exp(θ[1]), exp(θ[2]), exp(θ[3])]), 5.0)[1, 2]
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -362,6 +409,34 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = COMPOSED_JOINT,
             res1 = with_reference ?
                    _reference(_composed_joint_transition, θ11, ()) : nothing))
+
+    θ12 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_erlang_survival, θ12;
+            name = UPDATE_ERLANG,
+            res1 = with_reference ?
+                   _reference(_update_erlang_survival, θ12, ()) : nothing))
+
+    θ13 = [log(1.5), log(2.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_coxian_survival, θ13;
+            name = UPDATE_COXIAN,
+            res1 = with_reference ?
+                   _reference(_update_coxian_survival, θ13, ()) : nothing))
+
+    θ14 = [log(2.0), log(3.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_phase_type_survival, θ14;
+            name = UPDATE_PHASE_TYPE,
+            res1 = with_reference ?
+                   _reference(_update_phase_type_survival, θ14, ()) : nothing))
+
+    θ15 = [log(0.5), log(0.2), log(0.1)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_ctmc_transition, θ15;
+            name = UPDATE_CTMC,
+            res1 = with_reference ?
+                   _reference(_update_ctmc_transition, θ15, ()) : nothing))
 
     return out
 end
