@@ -79,6 +79,9 @@ using ComposedDistributions: sequential, resolve, compete, parallel, choose
 using SciMLBase: solve
 using OrdinaryDiffEqTsit5: Tsit5
 using LoweredDistributions
+# `update`/`parameters` are public but not exported (see `src/public.jl`), so
+# they are named explicitly rather than coming in with the `using` above.
+using LoweredDistributions: update, parameters
 
 export scenarios, backends, broken_scenario_names,
        backend_broken_scenarios, backend_skip_scenarios
@@ -96,6 +99,10 @@ const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
 const COMPOSED_SCALAR = "lower(composer) scalar-composer survival gradient"
 const COMPOSED_JOINT = "lower(composer) joint-CTMC transition gradient"
+const UPDATE_ERLANG = "update(ErlangChain, rates) survival gradient"
+const UPDATE_COXIAN = "update(Coxian, rates) survival gradient"
+const UPDATE_PHASE_TYPE = "update(PhaseType, [α; vec(S)]) survival gradient"
+const UPDATE_CTMC = "update(CTMC, rates) transition gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -266,6 +273,69 @@ function _composed_joint_transition(θ)
            transition_probability(c, 5.0)[1, 2]
 end
 
+# The `update` verb (#75), the operation a gradient-based fitting loop runs
+# INSIDE the differentiated region: `lower` once to fix the structure, then
+# rebuild only the continuous parameters under the sampler. That is the
+# opposite decomposition from every scenario above, which differentiates
+# `lower` itself — so a break in `update`'s rebuild would not be caught by any
+# of them. The structure is built once from literals in each closure, so
+# nothing about the phase count or sparsity pattern depends on θ; only the
+# rates carry the dual. `exp(θ[1])` keeps every rate positive at the θ = 0
+# probe the Enzyme/Mooncake/ReverseDiff rule preparation evaluates at.
+
+# `ErlangChain`: per-stage rates, stage names and per-stage phase counts held.
+function _update_erlang_survival(θ)
+    e = lower(Gamma(3.0, 1.0))
+    return _pt_survival(PhaseType(update(e, [exp(θ[1])])), 5.0)
+end
+
+# `Coxian`: per-phase rates, with the continue/absorb probabilities fixed
+# structure. Covers the second `AbstractChainTrick` rebuild path, whose
+# element type has to flow from the rate vector into the rebuilt object.
+function _update_coxian_survival(θ)
+    c = Coxian([1.0, 2.0], [0.4, 0.0])
+    return _pt_survival(
+        PhaseType(update(c, [exp(θ[1]), exp(θ[2])])), 5.0)
+end
+
+# `PhaseType`: the raw `[α; vec(S)]` entries. The flat vector is the fitting
+# primitive whose `eltype` must carry through, and this is the one rebuild
+# that goes through the constructor's validity checks on differentiated
+# values. `update` reshapes the S block COLUMN-major (`reshape(x, k, k)`), so
+# the entries run down each column: `[S11, S21, S12, S22]`. That builds the
+# series chain `[-r1 r1; 0 -r2]`, keeping S a proper sub-generator (row sums
+# ≤ 0) as θ moves and keeping phase 2 reachable, so both rates reach the
+# survival probability and neither gradient component is structurally zero.
+function _update_phase_type_survival(θ)
+    p = PhaseType([1.0, 0.0], [-2.0 2.0; 0.0 -3.0])
+    r1, r2 = exp(θ[1]), exp(θ[2])
+    return _pt_survival(
+        update(p, [1.0, 0.0, -r1, zero(r1), r1, -r2]), 5.0)
+end
+
+# `CTMC`: the existing off-diagonal rates in row-major order, state set and
+# sparsity pattern held. `update` rebuilds the generator DIRECTLY rather than
+# through `ctmc(specs...)`, whose Pair-vararg parsing does not differentiate
+# under Enzyme — that is the whole point of `update` existing for the fitting
+# loop, so unlike `_ctmc_builder_nll` above (known-broken on Enzyme forward
+# and reverse) this path is clean on every backend.
+#
+# The starting object is therefore assembled with the direct
+# `CTMC(states, Q)` constructor, as `_matrix_exp_direct` does, NOT with
+# `ctmc(specs...)`: building it with the spec parser would put the very
+# construct this scenario exists to bypass back on the differentiated path,
+# and Enzyme errors on it even when the spec rates are θ-independent
+# constants. `_ctmc_transitions` collects the non-zero off-diagonals
+# row-major, so θ maps to (well→ill, ill→well, ill→dead) in that order.
+function _update_ctmc_transition(θ)
+    Q = [-0.5 0.5 0.0
+         0.2 -0.3 0.1
+         0.0 0.0 0.0]
+    m = CTMC((:well, :ill, :dead), Q)
+    return transition_probability(
+        update(m, [exp(θ[1]), exp(θ[2]), exp(θ[3])]), 5.0)[1, 2]
+end
+
 """
     scenarios(; with_reference = false, category = :marginal)
 
@@ -362,6 +432,34 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = COMPOSED_JOINT,
             res1 = with_reference ?
                    _reference(_composed_joint_transition, θ11, ()) : nothing))
+
+    θ12 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_erlang_survival, θ12;
+            name = UPDATE_ERLANG,
+            res1 = with_reference ?
+                   _reference(_update_erlang_survival, θ12, ()) : nothing))
+
+    θ13 = [log(1.5), log(2.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_coxian_survival, θ13;
+            name = UPDATE_COXIAN,
+            res1 = with_reference ?
+                   _reference(_update_coxian_survival, θ13, ()) : nothing))
+
+    θ14 = [log(2.0), log(3.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_phase_type_survival, θ14;
+            name = UPDATE_PHASE_TYPE,
+            res1 = with_reference ?
+                   _reference(_update_phase_type_survival, θ14, ()) : nothing))
+
+    θ15 = [log(0.5), log(0.2), log(0.1)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_ctmc_transition, θ15;
+            name = UPDATE_CTMC,
+            res1 = with_reference ?
+                   _reference(_update_ctmc_transition, θ15, ()) : nothing))
 
     return out
 end
