@@ -1,5 +1,6 @@
 @testitem "parameters/update round-trip is the identity" begin
     using LoweredDistributions, Distributions
+    using LoweredDistributions: update, parameters
 
     # update(l, parameters(l)) == l for every lowered type, via the NamedTuple
     # read-back and via the flat AbstractVector primitive.
@@ -21,6 +22,7 @@ end
 
 @testitem "update preserves structure and sets new parameters" begin
     using LoweredDistributions, Distributions
+    using LoweredDistributions: update, parameters
 
     # ErlangChain: the stage count and names are structure; only the rate moves.
     e = lower(Gamma(3.0, 1.5))
@@ -45,6 +47,7 @@ end
 
 @testitem "update carries the parameter element type" begin
     using LoweredDistributions, Distributions
+    using LoweredDistributions: update, parameters
 
     # A Float32 rate vector rebuilds a Float32-carrying object (the property that
     # lets an AD dual through — differentiate-through-update covered in the AD
@@ -59,6 +62,7 @@ end
 
 @testitem "update is type-stable and infers the concrete type" begin
     using LoweredDistributions, Distributions, Test
+    using LoweredDistributions: update, parameters
 
     e = lower(Gamma(3.0, 1.0))
     @test (@inferred update(e, [0.5])) isa ErlangChain
@@ -70,6 +74,7 @@ end
 
 @testitem "update rejects the wrong number of parameters" begin
     using LoweredDistributions, Distributions
+    using LoweredDistributions: update, parameters
 
     @test_throws ArgumentError update(lower(Gamma(3.0, 1.0)), [0.5, 0.6])
     ct = ctmc(:a => (:b => 1.0), :b => (:a => 1.0))
@@ -83,6 +88,7 @@ end
 
 @testitem "update/parameters refuse a lowering with no rule" begin
     using LoweredDistributions, Test
+    using LoweredDistributions: update, parameters
     using LoweredDistributions: AbstractLowering
 
     # A lowering this package defines no rebuild for. Both verbs must say so
@@ -98,6 +104,7 @@ end
 
 @testitem "update differentiates through on ForwardDiff (per lowered type)" begin
     using LoweredDistributions, Distributions, ForwardDiff, LinearAlgebra
+    using LoweredDistributions: update, parameters
 
     # Structure fixed outside the differentiated closure; only the continuous
     # parameters carry the dual (the AD suite covers Enzyme forward/reverse and

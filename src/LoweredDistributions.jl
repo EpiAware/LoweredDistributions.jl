@@ -82,7 +82,6 @@ include("petri.jl")
 include("jump.jl")
 
 export lower
-export update, parameters
 export ChainStage, compartment_stages
 export ErlangChain, Coxian, PhaseType, phase_type
 export CTMC, ctmc, transition_probability, state_index
