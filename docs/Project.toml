@@ -16,7 +16,6 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 LoweredDistributions = "8539b7eb-0b85-40d0-a8a6-65093c3d0137"
-ModifiedDistributions = "664e6f8c-d74f-44d3-9f37-f82699103046"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
@@ -27,7 +26,6 @@ LoweredDistributions = {path = ".."}
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
 ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
-ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "main"}
 
 [compat]
 AlgebraOfGraphics = "0.12, 0.13"
@@ -44,7 +42,6 @@ EpiAwareADTools = "0.1"
 ForwardDiff = "0.10, 1"
 JumpProcesses = "9"
 Literate = "2"
-ModifiedDistributions = "0.1"
 OrdinaryDiffEqTsit5 = "1, 2"
 Random = "1"
 SciMLBase = "2, 3"
