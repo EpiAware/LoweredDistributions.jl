@@ -28,7 +28,7 @@ LoweredDistributionsSciMLBaseExt = "SciMLBase"
 [compat]
 AlgebraicPetri = "0.10"
 Catalyst = "16"
-ComposedDistributions = "0.1"
+ComposedDistributions = "0.1, 0.2"
 ConvolvedDistributions = "0.2, 0.3, 1"
 Distributions = "0.25"
 DocStringExtensions = "0.9"
