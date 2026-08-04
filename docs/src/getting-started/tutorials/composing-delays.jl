@@ -2,7 +2,7 @@ md"""
 # [Composing delays](@id composing-delays)
 
 The [lowering overview](@ref lowering-backends) and the per-backend pages each lowered a single `Distributions.Distribution`.
-The input side composes too, in two ways this page covers in turn: `ConvolvedDistributions.convolved` builds the delay that is the *sum* of independent delays, and `ComposedDistributions.sequential` builds a chain of named steps.
+The input side composes too, in two ways this page covers in turn: `ConvolvedDistributions.convolved` builds the delay that is the *sum* of independent delays, and `ComposedDistributions.sequential` builds a chain of named steps (with a [ModifiedDistributions](https://github.com/EpiAware/ModifiedDistributions.jl) leaf along the way).
 Both land on the same phase-type shape, so `lower` folds either one into the series chain that feeds the same backends.
 """
 
@@ -96,18 +96,20 @@ draw(
 )
 
 md"""
-## A composed tree
+## A composed tree, with a modified leaf
 
-[ComposedDistributions.jl](https://github.com/EpiAware/ComposedDistributions.jl) builds trees of named steps rather than a flat tuple of components.
-LoweredDistributions hosts the lowering bridge directly (`LoweredDistributionsComposedDistributionsExt`, LD#51), so `lower` reaches into a composed tree and folds it into the same phase-type shape, no different from lowering a bare `Distributions.Distribution`.
+[ComposedDistributions.jl](https://github.com/EpiAware/ComposedDistributions.jl) builds trees of named steps rather than a flat tuple of components, and [ModifiedDistributions.jl](https://github.com/EpiAware/ModifiedDistributions.jl) wraps individual leaves (a rescale, a weight, a hazard modifier).
+LoweredDistributions hosts the lowering bridge for both directly (`LoweredDistributionsComposedDistributionsExt` and `LoweredDistributionsModifiedDistributionsExt`, LD#51), so `lower` reaches into a composed tree and folds a modified leaf into the same phase-type shape, no different from lowering a bare `Distributions.Distribution`.
 
 A `Sequential` chain of two named steps is again a convolution of its steps, so it is a natural second route to the same kind of object `convolved` builds above.
+Here the second step is `affine`-rescaled rather than bare: an affine transform with no shift is an exact rescale of a phase-type (see `LoweredDistributionsModifiedDistributionsExt`), so the whole tree still lowers exactly.
 """
 
 using ComposedDistributions
+using ModifiedDistributions
 
 incubation = Gamma(2.0, 1.0)
-reporting = Gamma(1.0, 2.0)
+reporting = affine(Gamma(1.0, 1.0); scale = 2.0)
 tree = sequential(:incubation => incubation, :reporting => reporting)
 
 tree_lowered = lower(tree)
@@ -143,5 +145,5 @@ md"""
 ## What refuses
 
 `Difference` and `Product` are not sums of delays — a difference has signed support, a product is not a convolution — so neither is phase-type representable, and `lower` refuses them explicitly rather than return a silent moment-matched approximation.
-The same is true of a `Sequential` chain built from any leaf that does not itself lower: `lower` raises rather than silently drop the part it cannot represent.
+The same is true of a `Sequential` chain built from a leaf the modifier bridge itself refuses (a non-zero `shift`, a `Weighted` leaf, a hazard modifier on a non-Exponential base): `lower` raises rather than silently drop the part it cannot represent.
 """
