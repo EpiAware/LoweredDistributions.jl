@@ -21,7 +21,6 @@ JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-ModifiedDistributions = "664e6f8c-d74f-44d3-9f37-f82699103046"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -40,20 +39,19 @@ ADTypes = "1"
 Aqua = "0.8"
 BenchmarkTools = "1"
 Catalyst = "16"
-ComposedDistributions = "0.1"
-ConvolvedDistributions = "0.2"
+ComposedDistributions = "0.1, 0.2"
+ConvolvedDistributions = "0.2, 0.3, 1"
 DifferentiationInterface = "0.6, 0.7"
-DifferentiationInterfaceTest = "0.9, 0.10"
+DifferentiationInterfaceTest = "0.9, 0.10, 0.11"
 Distributions = "0.25"
 Documenter = "1"
 EpiAwareADTools = "0.1"
 ExplicitImports = "1"
 ForwardDiff = "0.10, 1"
-JET = "0.9, 0.10"
+JET = "0.9, 0.10, 0.11"
 JuliaFormatter = "2"
 JumpProcesses = "9"
 LinearAlgebra = "1"
-ModifiedDistributions = "0.1"
 OrdinaryDiffEqTsit5 = "1, 2"
 Pkg = "1"
 Random = "1"
@@ -65,22 +63,6 @@ TestItems = "1"
 
 [sources]
 LoweredDistributions = {path = ".."}
-# ModifiedDistributions is unregistered; pinned by git until it registers.
-# Its reverse lowering extension is gone (its removal PR merged) — this
-# package hosts the modifier lower() bridge (#51).
-ModifiedDistributions = {url = "https://github.com/EpiAware/ModifiedDistributions.jl", rev = "main"}
-# ComposedDistributions is unregistered; pinned by git until it registers.
-# Its reverse lowering extension is gone (its removal PR merged) — this
-# package hosts the composer lower() bridge (#51).
 ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
-# Until EpiAwarePackageTools is registered, it is pinned by git so the env
-# resolves out of the box. Switch to a local path if you develop the kit
-# alongside this package, e.g. EpiAwarePackageTools = {path = "../../EpiAwarePackageTools.jl"}.
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
-# ConvolvedDistributions is registered at 0.1.0, but the public `components`
-# accessor the bridge peels a `Convolved` with lands in 0.2 — pin `main` until
-# 0.2 registers, then this can drop to a registry resolve.
-ConvolvedDistributions = {url = "https://github.com/EpiAware/ConvolvedDistributions.jl", rev = "main"}
-# EpiAwareADTools is ConvolvedDistributions' (unregistered) transitive dep; a
-# dependency's own [sources] is ignored, so the root env must pin it too.
 EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}

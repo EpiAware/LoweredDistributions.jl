@@ -15,9 +15,14 @@ Lower a `Distribution` to a backend-agnostic dynamical-systems representation
   - Any other `Distribution` lowers via the adaptive [`phase_type`](@ref) fit.
 
 Which representation comes back therefore depends on `dist`'s value, not only
-on its type, so this method's return type is a `Union` — see
-`lower(dist, PhaseType)` below for the type-stable form automatic
-differentiation needs.
+on its type, so this method's return type is a `Union`. When the structural
+parameter is fixed — the usual fitting case, where the phase count is held
+constant and only the continuous rate is inferred — the branch is decided at
+compile time, the `Union` folds to that one concrete type, and `lower(dist)`
+differentiates on every backend (Enzyme included). Fix the structural
+parameter and the result carries an AD dual through its rate. When the
+structural parameter itself varies at runtime the `Union` is genuine; reach
+for `lower(dist, PhaseType)` below, the unconditionally type-stable form.
 
 # Arguments
 
@@ -47,7 +52,12 @@ end
 function lower(d::Gamma)
     scv = 1 / shape(d)
     scv <= 1 && return ErlangChain(compartment_stages(d; moment_match = true))
-    return phase_type(d)
+    # Build the hyperexponential PhaseType directly rather than via
+    # `phase_type(d)`, whose own `Union{ErlangChain, PhaseType}` return type
+    # would leak into this branch: with a fixed (constant) shape each branch
+    # here is then a single concrete type, so the whole method folds to that
+    # type and differentiates under Enzyme (see the AD-stability note below).
+    return _hyperexponential_fit(mean(d), scv)
 end
 
 lower(d::Distribution) = phase_type(d)
@@ -61,13 +71,16 @@ dispersion — the type-stable lowering, and the one to differentiate through.
 `lower(dist)` picks its representation from `dist`'s value (an
 [`ErlangChain`](@ref) for `c² ≤ 1`, a [`PhaseType`](@ref) for `c² > 1`, a
 [`CTMC`](@ref) for an `Exponential`), so its return type is a `Union` that
-only resolves at runtime. That `Union` is fine for ordinary use, and every
-backend canonicalises to `PhaseType` anyway, but on a differentiated path it
-breaks Enzyme outright (forward and reverse), and the `c² ≤ 1` branch cannot
-carry an AD dual at all — `ChainStage` stores its rate in a concrete `Float64`
-field. This method always returns the same concrete type and never touches
-`ChainStage`, so it differentiates on every backend the package tests
-(ForwardDiff, ReverseDiff, both Mooncake modes, both Enzyme modes).
+only resolves at runtime. With a fixed structural parameter that `Union` folds
+to a single concrete branch and `lower(dist)` itself differentiates on every
+backend — an [`ErlangChain`](@ref) now carries its rate's element type through
+to the canonical `(α, S)`, so the `c² ≤ 1` branch takes an AD dual too. This
+method is for when the structure varies at runtime (the `Union` is then
+genuine, and Enzyme cannot analyse it), or when you want the canonical
+`(α, S)`, or a fixed phase count via `phases`, directly. It always returns the
+same concrete type regardless of the value, so it never depends on the branch
+folding, and differentiates on every backend the package tests (ForwardDiff,
+ReverseDiff, both Mooncake modes, both Enzyme modes).
 
 The fit is the same two-moment fit `lower` performs — an Erlang chain of
 `round(1 / c²)` phases for `c² ≤ 1`, the balanced-means hyperexponential for

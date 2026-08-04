@@ -51,10 +51,11 @@ function _two_moments(d::Distribution, caller::String)
 end
 
 # The canonical PhaseType of an Erlang chain fitted to `(m, scv)`, built
-# directly rather than via `compartment_stages`/`ErlangChain`: `ChainStage`
-# stores its rate in a concrete `Float64` field, which is deliberate for the
-# structural chain representation but is a wall for an AD dual. Going straight
-# to `(α, S)` keeps the element type of `m`, so this branch differentiates.
+# directly as `(α, S)` rather than via `compartment_stages`/`ErlangChain`: the
+# canonical form is a dense `k x k` sub-generator, so there is no reason to
+# route through the compact chain representation and back. It keeps the element
+# type of `m`, so this branch carries an AD dual (as does the `ErlangChain`
+# path now that `ChainStage` is parametric on its rate — see `chain_stage.jl`).
 # `k` is the same `round(1 / c²)` moment match `compartment_stages` performs,
 # so the fitted chain has the same shape. The rate is recomputed from the
 # moments (`k / m`) rather than read off an exact leaf's scale (`1 / θ`), so

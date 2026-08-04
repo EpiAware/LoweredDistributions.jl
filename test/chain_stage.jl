@@ -50,3 +50,21 @@ end
     @test_throws ArgumentError compartment_stages(
         LogNormal(0.0, 1.5); moment_match = true)
 end
+
+@testitem "ChainStage carries the rate element type" begin
+    using LoweredDistributions, Distributions
+
+    # The rate is stored in a `ChainStage{T}` parametric field, not forced to
+    # `Float64`, so a non-Float64 element type flows through — this is what lets
+    # an AD dual through the Erlang lowering (issue #73).
+    s = compartment_stages(Gamma(3.0f0, 1.5f0))
+    @test s[1] isa ChainStage{Float32}
+    @test s[1].rate isa Float32
+
+    e = lower(Gamma(3.0f0, 1.5f0))
+    @test e isa ErlangChain{Vector{ChainStage{Float32}}}
+    # ... and the canonical (α, S) view keeps that element type.
+    pt = PhaseType(e)
+    @test eltype(pt.α) === Float32
+    @test eltype(pt.S) === Float32
+end

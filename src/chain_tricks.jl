@@ -13,7 +13,7 @@ as an [`AbstractChainTrick`](@ref).
   - [`compartment_stages`](@ref): builds the wrapped stage vector.
   - [`phase_type`](@ref): the adaptive fit that returns this for `c² ≤ 1`.
 """
-struct ErlangChain{S <: AbstractVector{ChainStage}} <: AbstractChainTrick
+struct ErlangChain{S <: AbstractVector{<:ChainStage}} <: AbstractChainTrick
     "The per-step stages, in chain order."
     stages::S
 end
@@ -64,14 +64,19 @@ struct Coxian{R <: AbstractVector{<:Real}, P <: AbstractVector{<:Real}} <:
 end
 
 # Concatenate an ErlangChain's stages into one Coxian: every sub-compartment
-# continues on (prob 1) except the very last, which always absorbs.
+# continues on (prob 1) except the very last, which always absorbs. The rate
+# element type is carried through from the stages so a differentiated rate
+# survives (an ErlangChain built from an AD dual lowers to a dual-carrying
+# Coxian, then PhaseType); the continue/absorb probabilities are structural
+# (exactly 1 or 0) and stay `Float64`.
 function Coxian(e::ErlangChain)
-    rates = Float64[]
+    T = mapreduce(s -> typeof(s.rate), promote_type, e.stages)
+    rates = T[]
     for s in e.stages
         append!(rates, fill(s.rate, s.stages))
     end
     k = length(rates)
-    probs = [i < k ? 1.0 : 0.0 for i in 1:k]
+    probs = [i < k ? one(T) : zero(T) for i in 1:k]
     return Coxian(rates, probs)
 end
 
@@ -142,13 +147,16 @@ end
 
 function PhaseType(c::Coxian)
     k = length(c.rates)
-    α = zeros(Float64, k)
-    α[1] = 1.0
-    S = zeros(Float64, k, k)
-    for i in 1:k
-        S[i, i] = -c.rates[i]
-        i < k && (S[i, i + 1] = c.rates[i] * c.probs[i])
-    end
+    T = promote_type(eltype(c.rates), eltype(c.probs))
+    # Build α and S with comprehensions rather than `zeros(T, dims...)`: for an
+    # abstractly-typed Coxian `T = promote_type(...)` is not a concrete type, and
+    # `zeros(T, k, k)` then infers to a dimensionality-uncertain `Array` (JET
+    # reports a spurious `PhaseType(::Any, ::Array{Float64, 3})` no-matching-
+    # method at the constructor call). A comprehension's rank is fixed by its
+    # loop shape, so the sub-generator is always a `Matrix`.
+    α = [i == 1 ? one(T) : zero(T) for i in 1:k]
+    S = [i + 1 == j ? c.rates[i] * c.probs[i] :
+         (i == j ? -c.rates[i] : zero(T)) for i in 1:k, j in 1:k]
     return PhaseType(α, S)
 end
 

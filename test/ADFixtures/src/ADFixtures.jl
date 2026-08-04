@@ -35,26 +35,38 @@
 #     out of leaf scope for this wave. Enzyme forward doesn't even error
 #     catchably here — it crashes the process (see `backend_skip_scenarios`).
 #
-#   - `adaptive_survival`: the same survival, but read off `lower(dist)`'s
-#     adaptive (Union-returning) dispatch, with no ODE solve in the way. This
-#     is the issue #16 break in isolation: broken on Enzyme (forward and
-#     reverse), clean on ReverseDiff and both Mooncake modes — so the Union
-#     alone is fatal only to Enzyme, and `ode_survival`'s failures elsewhere
-#     are the ODE solve, not the Union. Note this prices the type instability
-#     only: it uses `Gamma(0.5, ...)` (c² = 2), which always lands on the
-#     PhaseType branch, so the `ChainStage` `Float64` wall on the c² ≤ 1
-#     branch is not (and cannot be) exercised through `lower(dist)` — that
-#     branch is undifferentiable on every backend, which is why the canonical
-#     scenarios below cover it instead.
-#   - `canonical_erlang` / `canonical_h2`: the fix — the same survival through
-#     `lower(dist, PhaseType)`, the type-stable canonical lowering, on both
-#     sides of the `c²` branch. Clean on every backend, Enzyme included.
+#   - `adaptive_survival` / `adaptive_erlang_int` / `adaptive_erlang_noninteger`:
+#     the same survival read off one-argument `lower(dist)`, with no ODE solve
+#     in the way, on both sides of the `c²` branch (`Gamma(0.5)` hyperexponential,
+#     `Gamma(3.0)` and `Gamma(2.5)` Erlang). Each uses a fixed (literal) shape —
+#     the fitting invariant that the phase count is fixed structure — so the
+#     value branch is decided at compile time and `lower(dist)` folds to a single
+#     concrete type. Clean on every backend, Enzyme forward and reverse included:
+#     `ChainStage` now carries its rate's element type through `Coxian` to the
+#     canonical `(α, S)` (issue #73), so the `c² ≤ 1` Erlang path takes an AD
+#     dual, and `lower`'s hyperexponential arm returns a concrete `PhaseType`
+#     directly (no `phase_type` `Union` leak), so the `c² > 1` path no longer
+#     trips Enzyme's type analysis.
+#   - `composed_scalar` / `composed_joint`: the composer methods of `lower`
+#     (the ComposedDistributions extension), which had no AD coverage at all
+#     before issue #97 — the reason that issue's `Float64` hard-cast went
+#     unnoticed. `composed_scalar` folds a `resolve` and a `compete` through a
+#     `sequential` into one phase-type and reads its survival, so the series,
+#     mixture and competing-risks assemblers are all on the differentiated
+#     path; `composed_joint` differentiates `transition_probability` through
+#     the joint CTMCs `parallel` and `choose` lower to.
+#   - `canonical_erlang` / `canonical_h2`: the same survival through
+#     `lower(dist, PhaseType)`, the unconditionally type-stable canonical
+#     lowering (concrete whatever the value, so it does not rely on the branch
+#     folding), on both sides of the `c²` branch. Clean on every backend.
 #
-# `compartment_stages`/`ErlangChain` are NOT included: `ChainStage.rate` is a
-# concrete `Float64` field (ported as-is from CensoredDistributions.jl), so
-# that lowering is intentionally non-differentiable structural data, not a
-# differentiated path — which is exactly why `lower(dist, PhaseType)` builds
-# `(α, S)` directly instead of going through it.
+# The Erlang path (`c² ≤ 1`) is differentiated here, through
+# `adaptive_erlang_*`: `ChainStage` is parametric on its rate, so `lower(dist)`
+# on that branch carries an AD dual. Differentiating `lower(dist)` still needs
+# the structural parameter (the Gamma shape / phase count) held fixed — a
+# runtime-varying shape leaves a genuine `Union` that Enzyme cannot analyse,
+# which is inherent (a discrete phase count is not differentiable) and is what
+# `lower(dist, PhaseType; phases = k)` exists for.
 module ADFixtures
 
 using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
@@ -62,10 +74,12 @@ using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
 using DifferentiationInterface: DifferentiationInterface, Constant
 import DifferentiationInterfaceTest as DIT
 import ForwardDiff, ReverseDiff, Mooncake, Enzyme
-using Distributions: Gamma
+using Distributions: Gamma, Exponential
+using ComposedDistributions: sequential, resolve, compete, parallel, choose
 using SciMLBase: solve
 using OrdinaryDiffEqTsit5: Tsit5
 using LoweredDistributions
+using LoweredDistributions: update, parameters  # public, not exported
 
 export scenarios, backends, broken_scenario_names,
        backend_broken_scenarios, backend_skip_scenarios
@@ -76,9 +90,17 @@ const PHASE_TYPE_H2 = "phase_type hyperexponential (α, S) gradient"
 const ODE_SURVIVAL = "ode_problem solve survival gradient (PhaseType)"
 const ODE_SURVIVAL_DIRECT = "ode_problem solve survival gradient (PhaseType, direct)"
 const ADAPTIVE_SURVIVAL = "lower(dist) adaptive-dispatch survival gradient"
+const ADAPTIVE_ERLANG_INT = "lower(dist) adaptive Erlang survival gradient (integer shape)"
+const ADAPTIVE_ERLANG_NONINT = "lower(dist) adaptive Erlang survival gradient (non-integer shape)"
 const CANONICAL_ERLANG = "lower(dist, PhaseType) survival gradient (c² ≤ 1)"
 const CANONICAL_H2 = "lower(dist, PhaseType) survival gradient (c² > 1)"
 const FIXED_K_ERLANG = "lower(dist, PhaseType; phases) fixed-count survival gradient"
+const COMPOSED_SCALAR = "lower(composer) scalar-composer survival gradient"
+const COMPOSED_JOINT = "lower(composer) joint-CTMC transition gradient"
+const UPDATE_ERLANG = "update(ErlangChain, rates) survival gradient"
+const UPDATE_COXIAN = "update(Coxian, rates) survival gradient"
+const UPDATE_PHASE_TYPE = "update(PhaseType, [α; vec(S)]) survival gradient"
+const UPDATE_CTMC = "update(CTMC, rates) transition gradient"
 
 # ForwardDiff reference gradient for a scenario function.
 function _reference(f, θ, contexts)
@@ -119,16 +141,14 @@ function _phase_type_h2(θ)
 end
 
 # lower(Gamma(0.5, exp(θ[1]))) -> ode_problem -> a fixed-step Tsit5 solve ->
-# the survival probability at t = 5. Shape (0.5, always over-dispersed since
-# c² = 2 regardless of scale) is fixed so this always takes the phase_type
-# (PhaseType) branch, NOT ErlangChain: ChainStage.rate is a concrete Float64
-# field (deliberately non-differentiable structural data, see
-# phase_type_hyperexponential above), so an ErlangChain-routed distribution
-# parameter would hit that guard rather than the ODE solve itself. `exp(θ[1])`
-# (not `θ[1]` directly) keeps the scale positive for EVERY real θ, including
-# the θ = 0 rule-preparation probe Enzyme/Mooncake/ReverseDiff evaluate the
-# closure at (a bare `θ[1]` scale hits `Gamma`'s `scale > 0` guard there,
-# the same landmine `phase_type_hyperexponential` sidesteps above).
+# the survival probability at t = 5. Shape 0.5 (over-dispersed, c² = 2
+# regardless of scale) is a literal, so `lower` folds to a concrete `PhaseType`
+# and the only remaining break is the ODE solve itself (isolated by
+# `_ode_survival_direct` below). `exp(θ[1])` (not `θ[1]` directly) keeps the
+# scale positive for EVERY real θ, including the θ = 0 rule-preparation probe
+# Enzyme/Mooncake/ReverseDiff evaluate the closure at (a bare `θ[1]` scale hits
+# `Gamma`'s `scale > 0` guard there, the same landmine
+# `phase_type_hyperexponential` sidesteps above).
 function _ode_survival(θ)
     chain = lower(Gamma(0.5, exp(θ[1])))
     prob = ode_problem(chain, (0.0, 5.0))
@@ -137,11 +157,9 @@ function _ode_survival(θ)
 end
 
 # Diagnostic twin of `_ode_survival`: the SAME fixed-step ODE solve, but
-# building the PhaseType directly (a fixed concrete type) instead of through
-# `lower`/`phase_type`'s adaptive `ErlangChain`-or-`PhaseType` dispatch.
-# Isolates whether an `ode_problem`/Tsit5 differentiation break is the solve
-# itself, or `lower`'s Union return type reaching a downstream differentiated
-# call (see the ODE_SURVIVAL registration note).
+# building the PhaseType by hand rather than through `lower`. Confirms the
+# `ode_problem`/Tsit5 differentiation break is the solve itself, not the
+# lowering (both are a concrete `PhaseType` now — see the ODE_SURVIVAL note).
 function _ode_survival_direct(θ)
     α = [0.6, 0.4]
     S = [-3.0 zero(θ[1]); zero(θ[1]) -exp(θ[1])]
@@ -160,21 +178,42 @@ function _pt_survival(pt, t)
     return sum(transpose(pt.α) * LoweredDistributions._matrix_exp(pt.S .* t))
 end
 
-# The adaptive dispatch on the differentiated path: `lower(Gamma(...))` is
-# statically `Union{ErlangChain, PhaseType}` even though this shape (0.5,
-# c² = 2 > 1) always takes the PhaseType branch at runtime. The Union is the
-# whole point of the scenario — this is the break issue #16 registered,
-# reproduced without an ODE solve in the way.
+# The adaptive dispatch on the over-dispersed (c² > 1) branch, via one-argument
+# `lower(d)`. Shape 0.5 is a literal, so `lower`'s hyperexponential arm folds to
+# a concrete `PhaseType` (it builds the fit directly, not through `phase_type`'s
+# own `Union` return), and the survival differentiates on every backend — this
+# was the issue #73 Enzyme break (`IllegalTypeAnalysisException` on the leaked
+# `Union`) before that arm was made concrete.
 function _adaptive_survival(θ)
     pt = PhaseType(lower(Gamma(0.5, exp(θ[1]))))
     return _pt_survival(pt, 5.0)
 end
 
+# The adaptive dispatch on the Erlang (c² ≤ 1) branch, via one-argument
+# `lower(d)`, for an integer shape: `lower(Gamma(3.0, ·))` folds to a concrete
+# `ErlangChain` whose per-stage rate carries the AD element type, so the
+# survival differentiates on every backend, Enzyme forward and reverse
+# included. Shape 3.0 is a literal, so the structural branch is decided at
+# compile time (the fitting invariant: phase count is fixed, only the rate is
+# inferred) and no `Union` reaches the differentiated code.
+function _adaptive_erlang_int(θ)
+    return _pt_survival(PhaseType(lower(Gamma(3.0, exp(θ[1])))), 5.0)
+end
+
+# The same adaptive Erlang path for a non-integer shape still under-dispersed
+# (c² = 1 / 2.5 = 0.4 ≤ 1), so `lower` moment-matches to an Erlang chain rather
+# than reading an exact leaf. Covers the "non-integer shape" half of the
+# acceptance: the moment-matched rate is a smooth function of the scale and
+# carries the dual identically.
+function _adaptive_erlang_noninteger(θ)
+    return _pt_survival(PhaseType(lower(Gamma(2.5, exp(θ[1])))), 5.0)
+end
+
 # The type-stable twin: `lower(dist, PhaseType)` always returns the same
-# concrete type, so the same survival gradient is available on every backend.
-# Shape 3 (c² = 1/3 ≤ 1) takes the Erlang-chain branch, which the adaptive
-# dispatch routes through `ChainStage`'s Float64 rate field and so cannot
-# differentiate at all; the canonical form builds (α, S) directly.
+# concrete type whatever the value, so it differentiates on every backend
+# without depending on a literal shape folding the branch (the way the
+# `adaptive_*` scenarios do). Shape 3 (c² = 1/3 ≤ 1) takes the Erlang branch;
+# the canonical form builds (α, S) directly.
 function _canonical_erlang_survival(θ)
     return _pt_survival(lower(Gamma(3.0, exp(θ[1])), PhaseType), 5.0)
 end
@@ -195,6 +234,83 @@ end
 function _fixed_k_survival(θ)
     return _pt_survival(
         lower(Gamma(exp(θ[1]), 1.0), PhaseType; phases = 5), 5.0)
+end
+
+# The composer methods of `lower` (the ComposedDistributions extension), which
+# had no AD coverage at all until issue #97: every one of them canonicalised
+# each component to a concrete `Matrix{Float64}` and assembled into untyped
+# `zeros`, so a differentiated component rate hit
+# `MethodError: Float64(::Dual)`. Two scenarios cover the two lowering shapes.
+#
+# The scalar composers, which fold into one phase-type. `sequential` of a
+# `resolve` and a `compete` puts all three scalar assemblers on the
+# differentiated path in one gradient (the series block, the hyper-phase-type
+# mixture and its block-diagonal, and the competing-risks Kronecker sum), on
+# top of the canonicalisation they share. The structure is fixed and only the
+# rates move, so as with the `adaptive_*` scenarios no phase count depends on
+# θ; `exp(θ[1])` keeps every scale positive at the θ = 0 probe the
+# Enzyme/Mooncake/ReverseDiff rule preparation evaluates the closure at.
+function _composed_scalar_survival(θ)
+    d = sequential(
+        resolve(:a => (Exponential(exp(θ[1])), 0.3),
+            :b => (Exponential(5.0), 0.7)),
+        compete(:c => Exponential(2.0), :d => Exponential(exp(θ[1]))))
+    return _pt_survival(lower(d), 5.0)
+end
+
+# The vector composers, which lower to a joint CTMC rather than a phase-type,
+# read through the package's own matrix exponential. `parallel` covers the
+# Kronecker-sum generator over the product state space (`[1, end]` is the
+# probability both branches have absorbed by t = 5) and `choose` covers the
+# block-diagonal union (`[1, 2]` is the first alternative's own absorption, the
+# only θ-dependent entry — the block-diagonal row sums are constant).
+function _composed_joint_transition(θ)
+    p = lower(parallel(:a => Exponential(exp(θ[1])), :b => Exponential(3.0)))
+    c = lower(choose(:a => Exponential(exp(θ[1])), :b => Exponential(3.0)))
+    return transition_probability(p, 5.0)[1, end] +
+           transition_probability(c, 5.0)[1, 2]
+end
+
+# The `update` verb (#75): a fitting loop lowers once to fix the structure,
+# then rebuilds only the continuous parameters under the sampler. Every
+# scenario above differentiates `lower` itself, so none of them would catch a
+# break here. Each closure builds its structure from literals, so only the
+# rates carry the dual.
+
+# `ErlangChain`: per-stage rates.
+function _update_erlang_survival(θ)
+    e = lower(Gamma(3.0, 1.0))
+    return _pt_survival(PhaseType(update(e, [exp(θ[1])])), 5.0)
+end
+
+# `Coxian`: per-phase rates, continue/absorb probabilities structural.
+function _update_coxian_survival(θ)
+    c = Coxian([1.0, 2.0], [0.4, 0.0])
+    return _pt_survival(
+        PhaseType(update(c, [exp(θ[1]), exp(θ[2])])), 5.0)
+end
+
+# `PhaseType`: raw `[α; vec(S)]`. `update` reshapes S column-major, so the
+# entries run down each column to build the chain `[-r1 r1; 0 -r2]`; a
+# row-major vector would leave phase 2 unreachable and r2's gradient zero.
+function _update_phase_type_survival(θ)
+    p = PhaseType([1.0, 0.0], [-2.0 2.0; 0.0 -3.0])
+    r1, r2 = exp(θ[1]), exp(θ[2])
+    return _pt_survival(
+        update(p, [1.0, 0.0, -r1, zero(r1), r1, -r2]), 5.0)
+end
+
+# `CTMC`: existing off-diagonals, row-major. `update` rebuilds Q directly, so
+# unlike `_ctmc_builder_nll` this is clean on Enzyme — hence the direct
+# `CTMC(states, Q)` constructor here, since `ctmc(specs...)` would put the
+# very construct this bypasses back on the differentiated path.
+function _update_ctmc_transition(θ)
+    Q = [-0.5 0.5 0.0
+         0.2 -0.3 0.1
+         0.0 0.0 0.0]
+    m = CTMC((:well, :ill, :dead), Q)
+    return transition_probability(
+        update(m, [exp(θ[1]), exp(θ[2]), exp(θ[3])]), 5.0)[1, 2]
 end
 
 """
@@ -245,6 +361,20 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             res1 = with_reference ? _reference(_adaptive_survival, θ6, ()) :
                    nothing))
 
+    θ6e = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_adaptive_erlang_int, θ6e;
+            name = ADAPTIVE_ERLANG_INT,
+            res1 = with_reference ? _reference(_adaptive_erlang_int, θ6e, ()) :
+                   nothing))
+
+    θ6n = [log(1.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_adaptive_erlang_noninteger, θ6n;
+            name = ADAPTIVE_ERLANG_NONINT,
+            res1 = with_reference ?
+                   _reference(_adaptive_erlang_noninteger, θ6n, ()) : nothing))
+
     θ7 = [log(1.5)]
     push!(out,
         DIT.Scenario{:gradient, :out}(_canonical_erlang_survival, θ7;
@@ -265,6 +395,48 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             name = FIXED_K_ERLANG,
             res1 = with_reference ?
                    _reference(_fixed_k_survival, θ9, ()) : nothing))
+
+    θ10 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_composed_scalar_survival, θ10;
+            name = COMPOSED_SCALAR,
+            res1 = with_reference ?
+                   _reference(_composed_scalar_survival, θ10, ()) : nothing))
+
+    θ11 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_composed_joint_transition, θ11;
+            name = COMPOSED_JOINT,
+            res1 = with_reference ?
+                   _reference(_composed_joint_transition, θ11, ()) : nothing))
+
+    θ12 = [log(2.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_erlang_survival, θ12;
+            name = UPDATE_ERLANG,
+            res1 = with_reference ?
+                   _reference(_update_erlang_survival, θ12, ()) : nothing))
+
+    θ13 = [log(1.5), log(2.5)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_coxian_survival, θ13;
+            name = UPDATE_COXIAN,
+            res1 = with_reference ?
+                   _reference(_update_coxian_survival, θ13, ()) : nothing))
+
+    θ14 = [log(2.0), log(3.0)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_phase_type_survival, θ14;
+            name = UPDATE_PHASE_TYPE,
+            res1 = with_reference ?
+                   _reference(_update_phase_type_survival, θ14, ()) : nothing))
+
+    θ15 = [log(0.5), log(0.2), log(0.1)]
+    push!(out,
+        DIT.Scenario{:gradient, :out}(_update_ctmc_transition, θ15;
+            name = UPDATE_CTMC,
+            res1 = with_reference ?
+                   _reference(_update_ctmc_transition, θ15, ()) : nothing))
 
     return out
 end
@@ -308,61 +480,60 @@ itself (see `matrix_exp_direct`, which is clean on Enzyme).
 backend except ForwardDiff, for two DIFFERENT, independently-diagnosed
 reasons:
 
-  - `ODE_SURVIVAL` (through `lower`): `lower`/`phase_type`'s adaptive fit
-    returns `ErlangChain` or `PhaseType` depending on the distribution's `c²`
-    at runtime — a genuine `Union` return type, the SAME class of problem the
-    locked design already registered for a `Union{Dict, NamedTuple}` on a
-    differentiated path (an Enzyme `IllegalTypeAnalysisException`), now
-    showing up one level up in `lower`'s own dispatch rather than a
-    container. Mooncake reverse's error trace shows the derived rule's
-    `Union{Dual{ErlangChain}, Dual{PhaseType}}` return type directly.
-  - `ODE_SURVIVAL_DIRECT` (a hand-built, fixed-type `PhaseType`, bypassing
-    `lower`'s branch entirely): differentiating an ACTUAL `OrdinaryDiffEq`
-    `solve()` call — even fixed-step, even with a concrete input type — is
-    the well-known "naive AD through an ODE integrator" fragility that needs
-    a proper adjoint/sensitivity method (SciMLSensitivity) for anything but
-    forward-mode Dual propagation; out of leaf scope. ReverseDiff/Mooncake/
-    Enzyme-reverse hit a `MethodError` inside ReverseDiff's own nested-
-    ForwardDiff broadcast machinery interacting with `DiffEqBase.solve`'s
-    dynamic dispatch; Enzyme forward crashes the process outright (see
-    `backend_skip_scenarios`).
+  - `ODE_SURVIVAL` (through `lower`): with the fixed shape `Gamma(0.5, ·)` the
+    lowering folds to a concrete `PhaseType` (issue #73), so this scenario's
+    break is no longer `lower`'s dispatch — it is the same ODE-solve fragility
+    `ODE_SURVIVAL_DIRECT` isolates below. The two now differ only in how the
+    `PhaseType` is built (through `lower` vs by hand), and break identically.
+  - `ODE_SURVIVAL_DIRECT` (a hand-built, fixed-type `PhaseType`): differentiating
+    an ACTUAL `OrdinaryDiffEq` `solve()` call — even fixed-step, even with a
+    concrete input type — is the well-known "naive AD through an ODE integrator"
+    fragility that needs a proper adjoint/sensitivity method (SciMLSensitivity)
+    for anything but forward-mode Dual propagation; out of leaf scope.
+    ReverseDiff/Mooncake/Enzyme-reverse hit a `MethodError` inside ReverseDiff's
+    own nested-ForwardDiff broadcast machinery interacting with
+    `DiffEqBase.solve`'s dynamic dispatch; Enzyme forward crashes the process
+    outright (see `backend_skip_scenarios`).
 
-Together the two confirm: `lower`'s Union return type is a REAL, separate
-problem from ODE-solve differentiation (which itself is unreliable on
-anything but ForwardDiff, regardless of the Union). Differentiating
+Both are the ODE solve, not the lowering. Differentiating
 `ode_problem(dist_lowering, tspan)` on a non-ForwardDiff backend needs
 SciMLSensitivity; that adoption is future work, tracked as a wave-3 follow-up.
 
-[`ADAPTIVE_SURVIVAL`](@ref) prices the Union on its own, with no ODE solver
-anywhere near it (the same survival, read off the canonical `(α, S)` with the
-package's own matrix exponential). It is broken on Enzyme — forward and
-reverse — and clean on ReverseDiff and both Mooncake modes. That is a sharper
-result than `ODE_SURVIVAL` could give: the Union alone is fatal only to
-Enzyme, and `ODE_SURVIVAL`'s failure on ReverseDiff/Mooncake is the ODE solve,
-not the Union. Issue #16's "breaks AD on all but ForwardDiff" therefore
-conflated the two; the honest statement is "breaks Enzyme, and is a latent
-hazard everywhere else".
+[`ADAPTIVE_SURVIVAL`](@ref), [`ADAPTIVE_ERLANG_INT`](@ref) and
+[`ADAPTIVE_ERLANG_NONINT`](@ref) read the survival off one-argument
+`lower(dist)` with no ODE solver near it, and are clean on every backend,
+Enzyme forward and reverse included. They are the issue #73 fix in isolation:
+`ChainStage` carries its rate's element type through to `(α, S)` (so the
+`c² ≤ 1` Erlang branch takes an AD dual), and `lower`'s hyperexponential arm
+returns a concrete `PhaseType` (so the `c² > 1` branch no longer leaks a
+`Union` into Enzyme's type analysis). Each fixes the shape, so the value branch
+is decided at compile time; a runtime-varying shape would still leave a genuine
+`Union`, which is inherent and out of scope (a discrete phase count is not
+differentiable).
 
-[`CANONICAL_ERLANG`](@ref) and [`CANONICAL_H2`](@ref) are the fix, and are
-clean on every backend including both Enzyme modes: `lower(dist, PhaseType)`
-returns one concrete type on both sides of the `c²` branch, and builds `(α,
-S)` directly rather than through `ChainStage`'s `Float64` rate field — so the
-`c² ≤ 1` Erlang branch, which the adaptive dispatch cannot differentiate at
-all, differentiates here too.
+[`CANONICAL_ERLANG`](@ref) and [`CANONICAL_H2`](@ref) do the same survival
+through `lower(dist, PhaseType)`, which returns one concrete type on both sides
+of the `c²` branch whatever the value — so it differentiates even when the
+structural parameter is not fixed, without relying on the branch folding.
+
+[`COMPOSED_SCALAR`](@ref) and [`COMPOSED_JOINT`](@ref) are clean on every
+backend, Enzyme forward and reverse included, once the composer lowering
+promotes its `(α, S)` element type instead of casting to `Float64` (issue #97).
+Neither goes near an ODE solve, so they isolate the composed lowering's
+differentiability the way the `adaptive_*` scenarios isolate the leaf
+lowering's.
 """
 function backend_broken_scenarios()
     ctmc_builder_broken = Set{String}([CTMC_BUILDER])
     ode_broken = Set{String}([ODE_SURVIVAL, ODE_SURVIVAL_DIRECT])
-    # The Union return type on its own: Enzyme-only (see the note above).
-    union_broken = Set{String}([ADAPTIVE_SURVIVAL])
     return Dict{String, Set{String}}(
         "ForwardDiff" => Set{String}(),
         "ReverseDiff (tape)" => copy(ode_broken),
         "Mooncake reverse" => copy(ode_broken),
         "Mooncake forward" => copy(ode_broken),
-        "Enzyme reverse" => union(ctmc_builder_broken, ode_broken, union_broken),
+        "Enzyme reverse" => union(ctmc_builder_broken, ode_broken),
         "Enzyme forward" => union(ctmc_builder_broken,
-            Set{String}([ODE_SURVIVAL]), union_broken)
+            Set{String}([ODE_SURVIVAL]))
     )
 end
 

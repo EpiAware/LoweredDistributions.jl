@@ -7,3 +7,8 @@
 # and any downstream package building its own lowering, dispatch on these, but
 # the exported surface stays to the concrete, user-facing names.
 public AbstractLowering, AbstractChainTrick
+
+# The refit verbs. Not exported: `parameters` clashes with
+# ModelingToolkitBase's, and ComposedDistributions made the same call for its
+# own `update` (CD#221). Callers qualify.
+public update, parameters
