@@ -5,7 +5,7 @@ Most extensions belong in your own package, not in this one.
 This page covers how to do that, and when we would instead host the extension here.
 
 The lowering type hierarchy is locked.
-[`AbstractLowering`](@ref), [`AbstractChainTrick`](@ref) and the four concrete representations ([`ErlangChain`](@ref), [`Coxian`](@ref), [`PhaseType`](@ref), [`CTMC`](@ref)) are the whole set, and neither extension point below adds a new one.
+[`AbstractLowering`](@ref), [`AbstractChainTrick`](@ref) and the four concrete representations ([`ErlangChain`](@ref), [`Coxian`](@ref), [`PhaseType`](@ref), and the continuous-time Markov chain [`CTMC`](@ref)) are the whole set, and neither extension point below adds a new one.
 
 ## Giving a distribution an exact lowering
 
