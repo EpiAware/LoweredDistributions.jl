@@ -35,10 +35,15 @@ module LoweredDistributions
 
 # All genuine module-scope `using`/`import` statements live here, in
 # the main module file, rather than scattered across included files.
-using Distributions: Distribution, Exponential, Gamma, scale, shape
+import Distributions
+import Statistics
+using Distributions: Distribution, ContinuousUnivariateDistribution,
+                     Exponential, Gamma, LogNormal, Normal, scale, shape,
+                     pdf, logpdf, cdf, ccdf
 using DocStringExtensions: @template, DOCSTRING, EXPORTS, IMPORTS,
                            TYPEDEF, TYPEDFIELDS, TYPEDSIGNATURES
 using LinearAlgebra: I
+using Random: AbstractRNG, randexp
 using Statistics: mean, var
 
 # Register the standard EpiAware docstring conventions before any
@@ -74,6 +79,7 @@ include("phase_type.jl")
 include("convolve.jl")
 include("ctmc.jl")
 include("lower.jl")
+include("lowering_to_distribution.jl")
 include("update.jl")
 include("reaction_compartments.jl")
 include("generator.jl")
@@ -85,6 +91,7 @@ export lower
 export ChainStage, compartment_stages
 export ErlangChain, Coxian, PhaseType, phase_type
 export CTMC, ctmc, transition_probability, state_index
+export PhaseTypeDist, lowering_to_distribution, lowering_to_dist
 export linear_chain_reactions, reaction_system
 export ode_problem
 export petri_net

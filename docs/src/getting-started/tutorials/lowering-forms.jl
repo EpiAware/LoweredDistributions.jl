@@ -76,6 +76,32 @@ lower(Gamma(3.0, 1.5), PhaseType; phases = 5)
 
 Coxian(lower(Gamma(3.0, 1.5)))
 
+# ## Going back
+#
+# `lowering_to_distribution` reads a lowering back as a distribution.
+# With one argument it returns the lowering's own law, exactly: a homogeneous
+# chain is a `Gamma`, a single phase an `Exponential`, and anything else a
+# `PhaseTypeDist` whose density is closed form.
+
+lowering_to_distribution(lower(Gamma(3.0, 1.5)))
+
+#-
+
+lowering_to_distribution(lower(Gamma(0.5, 1.0)))
+
+# The family a delay started as cannot be read back from a lowering.
+# `lower` keeps only the mean and `c²`, so `LogNormal(0, 0.5)` and a
+# moment-matched `Gamma` land on the same chain.
+# Naming a target family as a second argument is the explicit request to
+# project onto it.
+
+lowering_to_distribution(lower(LogNormal(0.0, 0.5)), LogNormal)
+
+# That round trip is not the identity.
+# The mean survives, but `lower` quantised `c²` onto the `1/k` grid on the way
+# down, so the recovered variance sits on that grid too.
+# `lowering_to_dist` is an alias if you prefer the shorter name.
+
 # ## Summary
 #
 # | Input | `c²` | `lower` returns | Exact or fitted |
