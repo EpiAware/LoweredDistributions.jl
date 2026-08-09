@@ -38,25 +38,52 @@ end
 ForwardDiff.derivative(fixed_mean, 3.0)   # d/dα mean = 1.0, no step at α = 3.5
 
 md"""
-## In a Turing model
+## Refitting: `update`, not another `lower`
 
-Keep `phases` a **constant**, chosen from a point estimate or domain knowledge, and put a prior on the continuous parameter only:
+`phases` is fixed once, above, by the call to `lower`. A fitting loop that
+then calls `lower` again for every new candidate value throws that away: it
+re-derives `k = round(1 / c²)` from whatever the value happens to be, which
+is exactly the non-differentiable step the fixed-`phases` recipe exists to
+avoid, and it repeats the extra work of choosing a structure that has
+already been chosen.
 
-```julia
-@model function fit_delay(y)
-    θ ~ LogNormal(0.0, 1.0)                              # continuous — inferred
-    delay = lower(Gamma(3.0, θ), PhaseType; phases = 5)  # k fixed at 5
-    ## ... use `delay`'s generator / survival in the likelihood for `y` ...
-end
-```
+The structure-preserving alternative is [`update`](@ref): it rebuilds a
+lowering with new continuous parameters and the same structure, so it is
+the operation to call inside the differentiated region — a sampler, an
+optimiser — once `lower` has fixed `phases` outside it.
+[`parameters`](@ref) reads the continuous values back out, and
+`update(l, parameters(l)) == l` is the round trip between them.
+"""
 
-The sampler differentiates through `θ` on the fixed-`k` structure; `k` never enters the sampled space, so there is no discrete quantity to differentiate, and the gradient is defined on every backend the package tests, Enzyme included.
+using LoweredDistributions: update, parameters
+
+p = lower(Gamma(3.0, 1.5), PhaseType; phases = 5)
+parameters(p)                            # (; α, S) — the continuous values
+
+p2 = update(p, (; α = p.α, S = 2 .* p.S))   # same 5 phases, new rates
+update(p2, parameters(p2)) == p2            # the round trip
+
+md"""
+`update` takes a flat `AbstractVector` too — the form a sampler actually
+carries a proposal in, and the one whose `eltype` an AD dual flows through:
+"""
+
+update(p, vcat(p.α, vec(p.S))) == p
+
+md"""
+Inside a fitting loop this is the whole difference: `lower` runs once,
+outside the loop, to choose `phases`; `update` runs on every iteration,
+inside it, to move the continuous parameters without touching the structure
+`lower` chose. Re-`lower`ing per iteration instead is both more expensive —
+it repeats a decision already made — and, for anything but a hand-fixed
+`phases`, reintroduces the rounding-boundary step this page starts from.
 
 ## The failure mode to avoid
 
-  - **Letting `k` depend on a sampled parameter**: `lower(d, PhaseType)` without `phases` re-derives `k = round(1 / c²)` from the value, so the dimension steps at rounding boundaries and the gradient is undefined there. Fix `k`; infer the rate.
+  - **Letting `k` depend on a sampled parameter**: `lower(d, PhaseType)` without `phases` re-derives `k = round(1 / c²)` from the value, so the dimension steps at rounding boundaries and the gradient is undefined there. Fix `k`; infer the rate with `update`.
 
 ## See also
 
   - `lower(dist, PhaseType)` (Public API) for the full rationale — the type-instability this recipe avoids, and the `max_phases` memory cost fixing `phases` also sidesteps.
+  - [`update`](@ref) / [`parameters`](@ref) (Public API) for every lowered type's parameter shape, not just `PhaseType`'s.
 """
