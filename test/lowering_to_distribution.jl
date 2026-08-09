@@ -108,3 +108,76 @@ end
     @test lowering_to_dist === lowering_to_distribution
     @test lowering_to_dist(lower(Exponential(2.0))) == Exponential(2.0)
 end
+
+@testitem "PhaseTypeDist reports its own bounds and a compact show" begin
+    using LoweredDistributions, Distributions
+
+    pd = lowering_to_distribution(lower(Gamma(0.5, 1.0)))
+
+    # minimum/maximum are called directly here rather than only through
+    # insupport, which the earlier continuous-distribution test already uses.
+    @test Base.minimum(pd) == 0.0
+    @test Base.maximum(pd) == Inf
+
+    # Nothing else in the package calls `show` on a PhaseTypeDist.
+    @test repr(pd) == "PhaseTypeDist(2 phases)"
+end
+
+@testitem "a multi-phase Coxian samples by jumping between phases" begin
+    using LoweredDistributions, Distributions, Random
+
+    # Phase 1 exits at rate 2.0, splitting 50/50 between absorbing and moving
+    # to phase 2 (rate 1.0, always absorbing). That inter-phase move is a
+    # branch the earlier hyperexponential (never-branching-back) sampler test
+    # cannot reach, and length(c.rates) > 1 takes lowering_to_distribution's
+    # Coxian method to PhaseTypeDist rather than the single-phase Exponential.
+    c = Coxian([2.0, 1.0], [0.5, 0.0])
+    pd = lowering_to_distribution(c)
+    @test pd isa PhaseTypeDist
+
+    # mean = 1/2 (phase 1) + 1/2 * 1/1 (half the time, phase 2 too) = 1.0.
+    @test mean(pd) ≈ 1.0
+
+    rng = MersenneTwister(1)
+    draws = [rand(rng, pd) for _ in 1:20_000]
+    @test all(>=(0), draws)
+    @test sum(draws) / length(draws) ≈ mean(pd) rtol=0.05
+end
+
+@testitem "_from_moments projects onto Exponential, Normal and LogNormal" begin
+    using LoweredDistributions, Distributions
+
+    # A c² > 1 lowering has no family name of its own; project it onto the
+    # three closed-form families not exercised by the Gamma round-trip tests
+    # above.
+    l = lower(Gamma(0.5, 1.0))
+    m, v = mean(lowering_to_distribution(l)), var(lowering_to_distribution(l))
+
+    exp_back = lowering_to_distribution(l, Exponential)
+    @test exp_back isa Exponential
+    @test mean(exp_back) ≈ m
+
+    normal_back = lowering_to_distribution(l, Normal)
+    @test normal_back isa Normal
+    @test mean(normal_back) ≈ m
+    @test var(normal_back) ≈ v
+
+    lognormal_back = lowering_to_distribution(l, LogNormal)
+    @test lognormal_back isa LogNormal
+    @test mean(lognormal_back) ≈ m
+    @test var(lognormal_back) ≈ v
+end
+
+@testitem "lowering_to_distribution reads a CTMC and a single-phase \
+           PhaseType directly" begin
+    using LoweredDistributions, Distributions
+
+    # lower(::Exponential) is the only public producer of both shapes, so the
+    # CTMC and single-phase PhaseType methods are otherwise only exercised
+    # through that composition. Build each input directly instead.
+    m = ctmc(:on => (:absorbed => 0.5))
+    @test lowering_to_distribution(m) == Exponential(2.0)
+
+    pt = PhaseType([1.0], reshape([-0.5], 1, 1))
+    @test lowering_to_distribution(pt) == Exponential(2.0)
+end
