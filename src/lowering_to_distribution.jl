@@ -121,7 +121,7 @@ the same chain and the family cannot be read back from it.
   - `l`: the lowering to read back.
   - `F`: a distribution family to project onto. `Exponential`, `Gamma`,
     `LogNormal` and `Normal` invert their moments in closed form; another
-    family needs a [`_from_moments`](@ref) method.
+    family needs a `_from_moments` method.
 
 # Examples
 
@@ -197,5 +197,26 @@ end
     lowering_to_dist(l, ::Type{F})
 
 Alias for [`lowering_to_distribution`](@ref).
+
+Both names bind the same function, so a method added to one is visible through
+the other.
+
+# Arguments
+
+  - `l`: the lowering to read back.
+  - `F`: a distribution family to project onto.
+
+# Examples
+
+```@example
+using LoweredDistributions, Distributions
+
+lowering_to_dist(lower(Gamma(3.0, 1.5)))
+lowering_to_dist(lower(LogNormal(0.0, 0.5)), LogNormal)
+```
+
+# See also
+
+  - [`lowering_to_distribution`](@ref): the name this aliases.
 """
 const lowering_to_dist = lowering_to_distribution

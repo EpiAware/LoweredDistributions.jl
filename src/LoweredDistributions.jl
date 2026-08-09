@@ -39,7 +39,7 @@ import Distributions
 import Statistics
 using Distributions: Distribution, ContinuousUnivariateDistribution,
                      Exponential, Gamma, LogNormal, Normal, scale, shape,
-                     pdf, logpdf, cdf, ccdf
+                     pdf, ccdf
 using DocStringExtensions: @template, DOCSTRING, EXPORTS, IMPORTS,
                            TYPEDEF, TYPEDFIELDS, TYPEDSIGNATURES
 using LinearAlgebra: I
