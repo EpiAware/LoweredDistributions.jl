@@ -23,16 +23,11 @@
 const LIGHT_TUTORIALS = ["lowering-backends.jl", "fitting-ad-stable.jl"]
 
 # `ad-backends.jl` (the kit-managed AD-backends page, also under
-# `TUTORIALS_SUBDIR`) is deliberately absent from every list below, so it does
-# not render. CairoMakie, AlgebraOfGraphics and DataFramesMeta are now in
-# `docs/Project.toml` (LD#68), but it still needs Enzyme and Mooncake on top,
-# is a material docs-build-time change on its own, and the sibling
-# ComposedDistributions.jl hit an actual resolution failure adding the same
-# page (AlgebraOfGraphics pins DimensionalData incompatibly with the rest of
-# the docs env) — worth re-checking now the other three plotting deps resolve
-# cleanly here, but not re-tested as part of LD#68. Tracked in
-# https://github.com/EpiAware/LoweredDistributions.jl/issues/34; wire it in
-# there, not here.
+# `TUTORIALS_SUBDIR`) reads its scenarios and backend results from the
+# package-owned `test/ADFixtures` registry and exercises Enzyme and Mooncake
+# on top of ForwardDiff and ReverseDiff, so it is a `HEAVY_TUTORIALS` entry
+# below rather than a light one — resolved in
+# https://github.com/EpiAware/LoweredDistributions.jl/issues/34.
 
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) are each
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
@@ -41,13 +36,17 @@ const LIGHT_TUTORIALS = ["lowering-backends.jl", "fitting-ad-stable.jl"]
 # OrdinaryDiffEqTsit5, Catalyst, JumpProcesses, and AlgebraicPetri (which shells
 # out to the isolated `test/algebraic_petri` environment). Because each runs in
 # its own subprocess, the Catalyst page and the AlgebraicPetri page never share
-# an environment.
+# an environment. `ad-backends.jl` differentiates the package's AD-fixture
+# scenarios across every backend in `test/ADFixtures` (ForwardDiff,
+# ReverseDiff, Enzyme forward/reverse, Mooncake forward/reverse), so it runs
+# isolated here too.
 const HEAVY_TUTORIALS = [
     "backend-sciml.jl",
     "backend-catalyst.jl",
     "backend-jump.jl",
     "backend-petri.jl",
-    "composing-delays.jl"
+    "composing-delays.jl",
+    "ad-backends.jl"
 ]
 
 # Where the tutorial `.jl` sources and rendered `.md` pages live, relative to
@@ -64,7 +63,8 @@ const TUTORIAL_STUBS = [
     "backend-catalyst.md" => "# [Catalyst: the reaction-network view](@id backend-catalyst)",
     "backend-jump.md" => "# [JumpProcesses: the exact stochastic view](@id backend-jump)",
     "backend-petri.md" => "# [AlgebraicPetri: the Petri-net view](@id backend-petri)",
-    "composing-delays.md" => "# [Composing delays](@id composing-delays)"
+    "composing-delays.md" => "# [Composing delays](@id composing-delays)",
+    "ad-backends.md" => "# [Automatic differentiation backends](@id ad-backends)"
 ]
 
 # Heavy tutorials that always render from their `TUTORIAL_STUBS` heading and

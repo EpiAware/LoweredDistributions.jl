@@ -22,7 +22,8 @@ pages = [
             "AlgebraicPetri: Petri nets" => "getting-started/tutorials/backend-petri.md",
             "Composing delays" => "getting-started/tutorials/composing-delays.md"
         ],
-        "Fitting under AD (Turing)" => "getting-started/tutorials/fitting-ad-stable.md"
+        "Fitting under AD (Turing)" => "getting-started/tutorials/fitting-ad-stable.md",
+        "Automatic differentiation backends" => "getting-started/tutorials/ad-backends.md"
     ],
     "API reference" => [
         "Public API" => "lib/public.md",
