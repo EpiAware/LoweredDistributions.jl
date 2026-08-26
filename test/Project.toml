@@ -57,5 +57,3 @@ TestItems = "1"
 
 [sources]
 LoweredDistributions = {path = ".."}
-ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
-EpiAwareADTools = {url = "https://github.com/EpiAware/EpiAwareADTools.jl", rev = "main"}
