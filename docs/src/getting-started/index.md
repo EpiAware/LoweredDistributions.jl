@@ -28,7 +28,7 @@ lower(Gamma(3.0, 1.5))
 ```
 
 A `Gamma(3, 1.5)` delay is exactly three exponential compartments in series, each left at rate `1/1.5`, so it lowers to an [`ErlangChain`](@ref).
-An `Exponential` is memoryless, so it lowers to a two-state [`CTMC`](@ref) instead, and a distribution with no exact chain representation is fitted by matching its first two moments (see [`phase_type`](@ref)).
+An `Exponential` is memoryless, so it lowers to a two-state continuous-time Markov chain ([`CTMC`](@ref)) instead, and a distribution with no exact chain representation is fitted by matching its first two moments (see [`phase_type`](@ref)).
 
 Every phase-type lowering converts to the canonical `PhaseType(α, S)` view, which is the single shape the backends consume.
 

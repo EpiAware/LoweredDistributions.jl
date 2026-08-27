@@ -99,7 +99,7 @@ md"""
 ## A composed tree
 
 [ComposedDistributions.jl](https://github.com/EpiAware/ComposedDistributions.jl) builds trees of named steps rather than a flat tuple of components.
-LoweredDistributions hosts the lowering bridge directly (`LoweredDistributionsComposedDistributionsExt`, LD#51), so `lower` reaches into a composed tree and folds it into the same phase-type shape, no different from lowering a bare `Distributions.Distribution`.
+LoweredDistributions hosts the lowering bridge directly (`LoweredDistributionsComposedDistributionsExt`, issue #51), so `lower` reaches into a composed tree and folds it into the same phase-type shape, no different from lowering a bare `Distributions.Distribution`.
 
 A `Sequential` chain of two named steps is again a convolution of its steps, so it is a natural second route to the same kind of object `convolved` builds above.
 """
@@ -114,7 +114,7 @@ tree_lowered = lower(tree)
 length(tree_lowered.α)
 
 # `observed_distribution` is ComposedDistributions' own reading of what a `Sequential` chain observes: the convolution of its steps.
-# It is built independently of `lower` (through `ConvolvedDistributions.convolved` under the hood, not through this package), so comparing the two is a real check that the LD-hosted bridge agrees with ComposedDistributions' own semantics, not a tautology.
+# It is built independently of `lower` (through `ConvolvedDistributions.convolved` under the hood, not through this package), so comparing the two is a real check that this package's lowering bridge agrees with ComposedDistributions' own semantics, not a tautology.
 
 tree_observed = observed_distribution(tree)
 typeof(tree_observed)

@@ -15,6 +15,7 @@ pages = [
     "Getting started" => [
         "Overview" => "getting-started/index.md",
         "Lowering" => [
+            "The forms a lowering can take" => "getting-started/tutorials/lowering-forms.md",
             "Lowering a distribution to a dynamical system" => "getting-started/tutorials/lowering-backends.md",
             "SciMLBase: the ODE view" => "getting-started/tutorials/backend-sciml.md",
             "Catalyst: reaction networks" => "getting-started/tutorials/backend-catalyst.md",
