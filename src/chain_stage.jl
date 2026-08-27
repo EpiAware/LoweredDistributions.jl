@@ -70,8 +70,21 @@ end
 # over-dispersed delays (c² > 1, no Erlang chain matches both moments) rather
 # than duplicating that fit — see [`phase_type`](@ref) for the c² > 1 case.
 function _moment_stage(d)
-    m = mean(d)
-    v = var(d)
+    # See the identical guard in `_two_moments` (phase_type.jl): Statistics'
+    # `mean(itr)`/`var(itr)` fallback is fully generic (matches any argument),
+    # so `applicable` cannot tell a distribution with a real `mean` method
+    # from one without — only calling it and catching the resulting
+    # `MethodError` (raised from trying to `iterate(d)`) can.
+    local m, v
+    try
+        m = mean(d)
+        v = var(d)
+    catch e
+        e isa MethodError || rethrow()
+        throw(ArgumentError(
+            "lower needs a distribution with a defined mean and " *
+            "variance; $(typeof(d)) has neither."))
+    end
     (isfinite(m) && isfinite(v) && m > 0 && v > 0) || throw(ArgumentError(
         "moment matching needs a finite positive mean and variance; got " *
         "mean = $m, var = $v for $(typeof(d))."))

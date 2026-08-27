@@ -35,7 +35,7 @@ module LoweredDistributions
 
 # All genuine module-scope `using`/`import` statements live here, in
 # the main module file, rather than scattered across included files.
-using Distributions: Distribution, Exponential, Gamma, scale, shape
+using Distributions: Distribution, Exponential, Gamma, Truncated, scale, shape
 using DocStringExtensions: @template, DOCSTRING, EXPORTS, IMPORTS,
                            TYPEDEF, TYPEDFIELDS, TYPEDSIGNATURES
 using LinearAlgebra: I
