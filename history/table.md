@@ -1,113 +1,113 @@
-|                                                                                                   | v0.1.0             | 1ff0eed2187f9c...  | v0.1.0 / 1ff0eed2187f9c... |
+|                                                                                                   | v0.1.0             | 5e99061c104bbe...  | v0.1.0 / 5e99061c104bbe... |
 |:--------------------------------------------------------------------------------------------------|:------------------:|:------------------:|:--------------------------:|
-| AD gradients/ctmc(specs...) builder + transition_probability gradient/ForwardDiff                 | 21.6 ± 7.4 μs      | 21.6 ± 7.6 μs      | 1 ± 0.49                   |
-| AD gradients/ctmc(specs...) builder + transition_probability gradient/Mooncake forward            | 0.241 ± 0.02 ms    | 0.234 ± 0.021 ms   | 1.03 ± 0.13                |
-| AD gradients/ctmc(specs...) builder + transition_probability gradient/Mooncake reverse            | 1.35 ± 0.053 ms    | 1.3 ± 0.081 ms     | 1.04 ± 0.077               |
-| AD gradients/ctmc(specs...) builder + transition_probability gradient/ReverseDiff (tape)          | 0.807 ± 0.14 ms    | 0.791 ± 0.14 ms    | 1.02 ± 0.25                |
-| AD gradients/lower(composer) joint-CTMC transition gradient/Enzyme forward                        | 0.285 ± 0.014 ms   | 0.0892 ± 0.0055 ms | 3.19 ± 0.25                |
-| AD gradients/lower(composer) joint-CTMC transition gradient/Enzyme reverse                        | 0.653 ± 0.027 ms   | 0.454 ± 0.038 ms   | 1.44 ± 0.13                |
-| AD gradients/lower(composer) joint-CTMC transition gradient/ForwardDiff                           | 0.206 ± 0.011 ms   | 0.0408 ± 0.0038 ms | 5.05 ± 0.54                |
-| AD gradients/lower(composer) joint-CTMC transition gradient/Mooncake forward                      | 0.734 ± 0.029 ms   | 0.213 ± 0.016 ms   | 3.45 ± 0.29                |
-| AD gradients/lower(composer) joint-CTMC transition gradient/Mooncake reverse                      | 2.54 ± 0.061 ms    | 2.01 ± 0.2 ms      | 1.26 ± 0.13                |
-| AD gradients/lower(composer) joint-CTMC transition gradient/ReverseDiff (tape)                    | 2.89 ± 0.48 ms     | 2.68 ± 0.49 ms     | 1.08 ± 0.27                |
-| AD gradients/lower(composer) scalar-composer survival gradient/Enzyme forward                     | 0.19 ± 0.014 ms    | 0.0438 ± 0.0048 ms | 4.33 ± 0.57                |
-| AD gradients/lower(composer) scalar-composer survival gradient/Enzyme reverse                     | 0.713 ± 0.06 ms    | 0.569 ± 0.082 ms   | 1.25 ± 0.21                |
-| AD gradients/lower(composer) scalar-composer survival gradient/ForwardDiff                        | 0.149 ± 0.015 ms   | 19.5 ± 4.6 μs      | 7.63 ± 1.9                 |
-| AD gradients/lower(composer) scalar-composer survival gradient/Mooncake forward                   | 0.528 ± 0.027 ms   | 0.115 ± 0.016 ms   | 4.58 ± 0.67                |
-| AD gradients/lower(composer) scalar-composer survival gradient/Mooncake reverse                   | 2.17 ± 0.11 ms     | 1.7 ± 0.1 ms       | 1.28 ± 0.1                 |
-| AD gradients/lower(composer) scalar-composer survival gradient/ReverseDiff (tape)                 | 0.985 ± 0.074 ms   | 0.814 ± 0.15 ms    | 1.21 ± 0.23                |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Enzyme forward         | 10.1 ± 0.95 μs     | 10.2 ± 0.95 μs     | 0.993 ± 0.13               |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Enzyme reverse         | 0.26 ± 0.033 ms    | 0.261 ± 0.033 ms   | 0.996 ± 0.18               |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/ForwardDiff            | 7.44 ± 0.48 μs     | 7.44 ± 0.52 μs     | 1 ± 0.095                  |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Mooncake forward       | 0.0395 ± 0.011 ms  | 0.0397 ± 0.012 ms  | 0.994 ± 0.41               |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Mooncake reverse       | 0.52 ± 0.041 ms    | 0.466 ± 0.032 ms   | 1.12 ± 0.12                |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/ReverseDiff (tape)     | 0.783 ± 0.15 ms    | 0.773 ± 0.14 ms    | 1.01 ± 0.26                |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Enzyme forward     | 9.4 ± 1 μs         | 9.59 ± 3.2 μs      | 0.98 ± 0.34                |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Enzyme reverse     | 0.249 ± 0.059 ms   | 0.245 ± 0.025 ms   | 1.02 ± 0.26                |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/ForwardDiff        | 4.69 ± 0.44 μs     | 4.7 ± 0.48 μs      | 0.997 ± 0.14               |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Mooncake forward   | 26.1 ± 2.3 μs      | 27.2 ± 2.2 μs      | 0.958 ± 0.11               |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Mooncake reverse   | 0.36 ± 0.03 ms     | 0.334 ± 0.032 ms   | 1.08 ± 0.14                |
-| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/ReverseDiff (tape) | 0.298 ± 0.043 ms   | 0.292 ± 0.042 ms   | 1.02 ± 0.21                |
-| AD gradients/lower(dist) adaptive-dispatch survival gradient/Enzyme forward                       | 9.49 ± 1.6 μs      | 9.82 ± 1.8 μs      | 0.966 ± 0.24               |
-| AD gradients/lower(dist) adaptive-dispatch survival gradient/Enzyme reverse                       | 0.25 ± 0.036 ms    | 0.243 ± 0.023 ms   | 1.03 ± 0.18                |
-| AD gradients/lower(dist) adaptive-dispatch survival gradient/ForwardDiff                          | 5.13 ± 0.53 μs     | 5.04 ± 0.56 μs     | 1.02 ± 0.15                |
-| AD gradients/lower(dist) adaptive-dispatch survival gradient/Mooncake forward                     | 26.3 ± 1.7 μs      | 26.4 ± 1.7 μs      | 0.997 ± 0.09               |
-| AD gradients/lower(dist) adaptive-dispatch survival gradient/Mooncake reverse                     | 0.342 ± 0.032 ms   | 0.313 ± 0.031 ms   | 1.09 ± 0.15                |
-| AD gradients/lower(dist) adaptive-dispatch survival gradient/ReverseDiff (tape)                   | 0.335 ± 0.052 ms   | 0.328 ± 0.051 ms   | 1.02 ± 0.23                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Enzyme forward                     | 9.6 ± 1.6 μs       | 9.87 ± 1.9 μs      | 0.973 ± 0.25               |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Enzyme reverse                     | 0.248 ± 0.027 ms   | 0.246 ± 0.023 ms   | 1.01 ± 0.15                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/ForwardDiff                        | 5.2 ± 0.57 μs      | 5.09 ± 0.63 μs     | 1.02 ± 0.17                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Mooncake forward                   | 26.8 ± 2 μs        | 26.9 ± 1.9 μs      | 0.996 ± 0.1                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Mooncake reverse                   | 0.36 ± 0.033 ms    | 0.327 ± 0.03 ms    | 1.1 ± 0.14                 |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/ReverseDiff (tape)                 | 0.345 ± 0.054 ms   | 0.339 ± 0.049 ms   | 1.02 ± 0.22                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Enzyme forward                     | 10.1 ± 0.94 μs     | 10.1 ± 0.91 μs     | 0.999 ± 0.13               |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Enzyme reverse                     | 0.239 ± 0.024 ms   | 0.242 ± 0.026 ms   | 0.99 ± 0.14                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/ForwardDiff                        | 7.24 ± 0.46 μs     | 7.26 ± 0.47 μs     | 0.998 ± 0.091              |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Mooncake forward                   | 0.0377 ± 0.011 ms  | 0.0385 ± 0.011 ms  | 0.981 ± 0.41               |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Mooncake reverse                   | 0.475 ± 0.037 ms   | 0.441 ± 0.032 ms   | 1.08 ± 0.11                |
-| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/ReverseDiff (tape)                 | 0.783 ± 0.14 ms    | 0.771 ± 0.14 ms    | 1.01 ± 0.26                |
-| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Enzyme forward          | 26.4 ± 2.7 μs      | 26.7 ± 2.8 μs      | 0.989 ± 0.15               |
-| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Enzyme reverse          | 0.115 ± 0.0077 ms  | 0.118 ± 0.0093 ms  | 0.98 ± 0.1                 |
-| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/ForwardDiff             | 15.8 ± 2 μs        | 15.8 ± 2.2 μs      | 1 ± 0.19                   |
-| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Mooncake forward        | 0.064 ± 0.004 ms   | 0.0635 ± 0.004 ms  | 1.01 ± 0.089               |
-| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Mooncake reverse        | 0.38 ± 0.024 ms    | 0.357 ± 0.026 ms   | 1.06 ± 0.1                 |
-| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/ReverseDiff (tape)      | 2.79 ± 0.51 ms     | 2.76 ± 0.51 ms     | 1.01 ± 0.26                |
-| AD gradients/matrix_exp/transition_probability direct gradient/Enzyme forward                     | 24.1 ± 9.9 μs      | 23.8 ± 9.2 μs      | 1.01 ± 0.57                |
-| AD gradients/matrix_exp/transition_probability direct gradient/Enzyme reverse                     | 0.255 ± 0.036 ms   | 0.253 ± 0.025 ms   | 1.01 ± 0.17                |
-| AD gradients/matrix_exp/transition_probability direct gradient/ForwardDiff                        | 12.9 ± 1.6 μs      | 13.8 ± 1.6 μs      | 0.936 ± 0.16               |
-| AD gradients/matrix_exp/transition_probability direct gradient/Mooncake forward                   | 0.0691 ± 0.0055 ms | 0.0689 ± 0.0063 ms | 1 ± 0.12                   |
-| AD gradients/matrix_exp/transition_probability direct gradient/Mooncake reverse                   | 0.445 ± 0.032 ms   | 0.428 ± 0.033 ms   | 1.04 ± 0.11                |
-| AD gradients/matrix_exp/transition_probability direct gradient/ReverseDiff (tape)                 | 0.781 ± 0.14 ms    | 0.769 ± 0.14 ms    | 1.02 ± 0.26                |
-| AD gradients/ode_problem solve survival gradient (PhaseType)/Enzyme forward                       | 16.8 ± 0.69 ms     | 16.7 ± 0.69 ms     | 1.01 ± 0.058               |
-| AD gradients/ode_problem solve survival gradient (PhaseType)/ForwardDiff                          | 0.14 ± 0.0034 ms   | 0.141 ± 0.003 ms   | 0.992 ± 0.032              |
-| AD gradients/ode_problem solve survival gradient (PhaseType)/Mooncake forward                     | 0.11 ± 0.018 s     | 0.112 ± 0.023 s    | 0.981 ± 0.26               |
-| AD gradients/ode_problem solve survival gradient (PhaseType, direct)/Enzyme forward               | 16.6 ± 0.62 ms     | 16.7 ± 0.66 ms     | 0.991 ± 0.054              |
-| AD gradients/ode_problem solve survival gradient (PhaseType, direct)/ForwardDiff                  | 0.141 ± 0.0033 ms  | 0.14 ± 0.0032 ms   | 1.01 ± 0.033               |
-| AD gradients/ode_problem solve survival gradient (PhaseType, direct)/Mooncake forward             | 0.111 ± 0.019 s    | 0.111 ± 0.019 s    | 0.999 ± 0.24               |
-| AD gradients/phase_type hyperexponential (α, S) gradient/Enzyme forward                           | 6.05 ± 0.067 μs    | 6.11 ± 0.08 μs     | 0.991 ± 0.017              |
-| AD gradients/phase_type hyperexponential (α, S) gradient/Enzyme reverse                           | 1.34 ± 0.043 μs    | 1.39 ± 0.063 μs    | 0.962 ± 0.054              |
-| AD gradients/phase_type hyperexponential (α, S) gradient/ForwardDiff                              | 0.526 ± 0.06 μs    | 0.476 ± 0.054 μs   | 1.11 ± 0.18                |
-| AD gradients/phase_type hyperexponential (α, S) gradient/Mooncake forward                         | 11.6 ± 0.48 μs     | 11.6 ± 0.56 μs     | 1 ± 0.064                  |
-| AD gradients/phase_type hyperexponential (α, S) gradient/Mooncake reverse                         | 16.4 ± 0.73 μs     | 15.5 ± 0.78 μs     | 1.06 ± 0.072               |
-| AD gradients/phase_type hyperexponential (α, S) gradient/ReverseDiff (tape)                       | 8.01 ± 0.26 μs     | 8 ± 0.25 μs        | 1 ± 0.045                  |
-| AD gradients/update(CTMC, rates) transition gradient/Enzyme forward                               | 22.6 ± 8.7 μs      | 21.4 ± 7.9 μs      | 1.06 ± 0.56                |
-| AD gradients/update(CTMC, rates) transition gradient/Enzyme reverse                               | 0.254 ± 0.029 ms   | 0.261 ± 0.036 ms   | 0.974 ± 0.17               |
-| AD gradients/update(CTMC, rates) transition gradient/ForwardDiff                                  | 12.2 ± 1.4 μs      | 12.9 ± 1.5 μs      | 0.95 ± 0.15                |
-| AD gradients/update(CTMC, rates) transition gradient/Mooncake forward                             | 0.0687 ± 0.0048 ms | 0.0698 ± 0.0056 ms | 0.983 ± 0.1                |
-| AD gradients/update(CTMC, rates) transition gradient/Mooncake reverse                             | 0.516 ± 0.04 ms    | 0.477 ± 0.041 ms   | 1.08 ± 0.13                |
-| AD gradients/update(CTMC, rates) transition gradient/ReverseDiff (tape)                           | 0.725 ± 0.15 ms    | 0.712 ± 0.15 ms    | 1.02 ± 0.31                |
-| AD gradients/update(Coxian, rates) survival gradient/Enzyme forward                               | 12.1 ± 1.4 μs      | 11.3 ± 1.4 μs      | 1.06 ± 0.18                |
-| AD gradients/update(Coxian, rates) survival gradient/Enzyme reverse                               | 0.25 ± 0.028 ms    | 0.252 ± 0.026 ms   | 0.992 ± 0.15               |
-| AD gradients/update(Coxian, rates) survival gradient/ForwardDiff                                  | 6.78 ± 1.1 μs      | 6.59 ± 0.58 μs     | 1.03 ± 0.19                |
-| AD gradients/update(Coxian, rates) survival gradient/Mooncake forward                             | 0.047 ± 0.012 ms   | 0.0405 ± 0.012 ms  | 1.16 ± 0.44                |
-| AD gradients/update(Coxian, rates) survival gradient/Mooncake reverse                             | 0.367 ± 0.038 ms   | 0.333 ± 0.035 ms   | 1.1 ± 0.16                 |
-| AD gradients/update(Coxian, rates) survival gradient/ReverseDiff (tape)                           | 0.341 ± 0.061 ms   | 0.332 ± 0.05 ms    | 1.03 ± 0.24                |
-| AD gradients/update(ErlangChain, rates) survival gradient/Enzyme forward                          | 10.3 ± 0.77 μs     | 10.2 ± 0.67 μs     | 1.01 ± 0.1                 |
-| AD gradients/update(ErlangChain, rates) survival gradient/Enzyme reverse                          | 0.266 ± 0.035 ms   | 0.267 ± 0.027 ms   | 0.997 ± 0.16               |
-| AD gradients/update(ErlangChain, rates) survival gradient/ForwardDiff                             | 7.48 ± 0.48 μs     | 7.42 ± 0.52 μs     | 1.01 ± 0.095               |
-| AD gradients/update(ErlangChain, rates) survival gradient/Mooncake forward                        | 0.0429 ± 0.012 ms  | 0.0421 ± 0.012 ms  | 1.02 ± 0.41                |
-| AD gradients/update(ErlangChain, rates) survival gradient/Mooncake reverse                        | 0.539 ± 0.035 ms   | 0.487 ± 0.038 ms   | 1.11 ± 0.11                |
-| AD gradients/update(ErlangChain, rates) survival gradient/ReverseDiff (tape)                      | 0.802 ± 0.14 ms    | 0.793 ± 0.14 ms    | 1.01 ± 0.25                |
-| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Enzyme forward                      | 11.7 ± 1.3 μs      | 11.7 ± 1.7 μs      | 1 ± 0.18                   |
-| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Enzyme reverse                      | 0.245 ± 0.031 ms   | 0.246 ± 0.027 ms   | 0.997 ± 0.17               |
-| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/ForwardDiff                         | 5.97 ± 0.49 μs     | 6.54 ± 0.52 μs     | 0.913 ± 0.1                |
-| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Mooncake forward                    | 0.0439 ± 0.011 ms  | 0.0395 ± 0.011 ms  | 1.11 ± 0.43                |
-| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Mooncake reverse                    | 0.378 ± 0.031 ms   | 0.32 ± 0.026 ms    | 1.18 ± 0.14                |
-| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/ReverseDiff (tape)                  | 0.314 ± 0.046 ms   | 0.305 ± 0.045 ms   | 1.03 ± 0.21                |
-| Bridges/jump_problem (JumpProcesses)                                                              | 1.26 ± 0.096 μs    | 1.27 ± 0.076 μs    | 0.989 ± 0.096              |
-| Bridges/ode_problem (SciMLBase)                                                                   | 20.2 ± 0.34 μs     | 19.7 ± 0.32 μs     | 1.03 ± 0.024               |
-| Bridges/reaction_system (Catalyst)                                                                | 0.15 ± 0.0049 ms   | 0.0922 ± 0.0038 ms | 1.63 ± 0.086               |
-| Evaluation/ctmc builder + transition_probability                                                  | 4.32 ± 0.47 μs     | 4.46 ± 0.63 μs     | 0.97 ± 0.17                |
-| Evaluation/phase-type matrix_exp                                                                  | 3.26 ± 1.6 μs      | 3.43 ± 2.3 μs      | 0.951 ± 0.79               |
-| Lowering/canonical(Erlang branch)                                                                 | 0.151 ± 0.05 μs    | 0.145 ± 0.039 μs   | 1.04 ± 0.44                |
-| Lowering/canonical(PhaseType branch)                                                              | 0.128 ± 0.0087 μs  | 0.136 ± 0.016 μs   | 0.935 ± 0.13               |
-| Lowering/canonical(fixed phases)                                                                  | 0.191 ± 0.028 μs   | 0.198 ± 0.041 μs   | 0.961 ± 0.24               |
-| Lowering/lower(Exponential)                                                                       | 23.8 ± 1.8 μs      | 1.51 ± 0.049 μs    | 15.8 ± 1.3                 |
-| Lowering/lower(Gamma, Erlang branch)                                                              | 29.9 ± 23 ns       | 29 ± 25 ns         | 1.03 ± 1.2                 |
-| Lowering/lower(Gamma, PhaseType branch)                                                           | 0.129 ± 0.071 μs   | 0.127 ± 0.077 μs   | 1.01 ± 0.83                |
-| time_to_load                                                                                      | 0.513 ± 0.0019 s   | 0.519 ± 0.005 s    | 0.989 ± 0.01               |
+| AD gradients/ctmc(specs...) builder + transition_probability gradient/ForwardDiff                 | 22 ± 7.7 μs        | 21.9 ± 8 μs        | 1 ± 0.51                   |
+| AD gradients/ctmc(specs...) builder + transition_probability gradient/Mooncake forward            | 0.202 ± 0.017 ms   | 0.202 ± 0.017 ms   | 0.997 ± 0.12               |
+| AD gradients/ctmc(specs...) builder + transition_probability gradient/Mooncake reverse            | 1.3 ± 0.082 ms     | 1.36 ± 0.093 ms    | 0.96 ± 0.089               |
+| AD gradients/ctmc(specs...) builder + transition_probability gradient/ReverseDiff (tape)          | 0.753 ± 0.18 ms    | 0.77 ± 0.17 ms     | 0.978 ± 0.32               |
+| AD gradients/lower(composer) joint-CTMC transition gradient/Enzyme forward                        | 0.0955 ± 0.0065 ms | 0.0932 ± 0.0063 ms | 1.03 ± 0.099               |
+| AD gradients/lower(composer) joint-CTMC transition gradient/Enzyme reverse                        | 0.479 ± 0.074 ms   | 0.452 ± 0.081 ms   | 1.06 ± 0.25                |
+| AD gradients/lower(composer) joint-CTMC transition gradient/ForwardDiff                           | 0.0451 ± 0.0039 ms | 0.0457 ± 0.0039 ms | 0.988 ± 0.12               |
+| AD gradients/lower(composer) joint-CTMC transition gradient/Mooncake forward                      | 0.213 ± 0.02 ms    | 0.219 ± 0.02 ms    | 0.97 ± 0.13                |
+| AD gradients/lower(composer) joint-CTMC transition gradient/Mooncake reverse                      | 2.05 ± 0.21 ms     | 2.2 ± 0.26 ms      | 0.932 ± 0.15               |
+| AD gradients/lower(composer) joint-CTMC transition gradient/ReverseDiff (tape)                    | 2.59 ± 0.62 ms     | 2.66 ± 0.55 ms     | 0.974 ± 0.31               |
+| AD gradients/lower(composer) scalar-composer survival gradient/Enzyme forward                     | 0.0459 ± 0.0032 ms | 0.0482 ± 0.0036 ms | 0.953 ± 0.098              |
+| AD gradients/lower(composer) scalar-composer survival gradient/Enzyme reverse                     | 0.671 ± 0.059 ms   | 0.651 ± 0.13 ms    | 1.03 ± 0.23                |
+| AD gradients/lower(composer) scalar-composer survival gradient/ForwardDiff                        | 20.9 ± 4.2 μs      | 22.8 ± 4.4 μs      | 0.915 ± 0.26               |
+| AD gradients/lower(composer) scalar-composer survival gradient/Mooncake forward                   | 0.101 ± 0.017 ms   | 0.109 ± 0.018 ms   | 0.923 ± 0.22               |
+| AD gradients/lower(composer) scalar-composer survival gradient/Mooncake reverse                   | 1.71 ± 0.12 ms     | 1.85 ± 0.13 ms     | 0.922 ± 0.092              |
+| AD gradients/lower(composer) scalar-composer survival gradient/ReverseDiff (tape)                 | 0.774 ± 0.19 ms    | 0.796 ± 0.19 ms    | 0.972 ± 0.33               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Enzyme forward         | 10.5 ± 1.4 μs      | 10.5 ± 1.6 μs      | 1 ± 0.2                    |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Enzyme reverse         | 0.324 ± 0.022 ms   | 0.318 ± 0.034 ms   | 1.02 ± 0.13                |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/ForwardDiff            | 8.39 ± 0.92 μs     | 8.3 ± 0.78 μs      | 1.01 ± 0.15                |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Mooncake forward       | 0.0386 ± 0.012 ms  | 0.0388 ± 0.013 ms  | 0.993 ± 0.45               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/Mooncake reverse       | 0.509 ± 0.035 ms   | 0.519 ± 0.029 ms   | 0.98 ± 0.087               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (integer shape)/ReverseDiff (tape)     | 0.743 ± 0.18 ms    | 0.756 ± 0.16 ms    | 0.982 ± 0.31               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Enzyme forward     | 10.3 ± 3.2 μs      | 10.4 ± 3.2 μs      | 0.982 ± 0.43               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Enzyme reverse     | 0.312 ± 0.04 ms    | 0.3 ± 0.025 ms     | 1.04 ± 0.16                |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/ForwardDiff        | 5.28 ± 0.65 μs     | 5.26 ± 0.65 μs     | 1 ± 0.18                   |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Mooncake forward   | 25.3 ± 2.6 μs      | 25.7 ± 3.3 μs      | 0.985 ± 0.16               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/Mooncake reverse   | 0.355 ± 0.035 ms   | 0.381 ± 0.028 ms   | 0.932 ± 0.12               |
+| AD gradients/lower(dist) adaptive Erlang survival gradient (non-integer shape)/ReverseDiff (tape) | 0.274 ± 0.038 ms   | 0.281 ± 0.044 ms   | 0.973 ± 0.2                |
+| AD gradients/lower(dist) adaptive-dispatch survival gradient/Enzyme forward                       | 10.1 ± 2.4 μs      | 9.97 ± 2.7 μs      | 1.01 ± 0.36                |
+| AD gradients/lower(dist) adaptive-dispatch survival gradient/Enzyme reverse                       | 0.313 ± 0.025 ms   | 0.3 ± 0.026 ms     | 1.04 ± 0.12                |
+| AD gradients/lower(dist) adaptive-dispatch survival gradient/ForwardDiff                          | 5.97 ± 0.96 μs     | 5.73 ± 0.83 μs     | 1.04 ± 0.23                |
+| AD gradients/lower(dist) adaptive-dispatch survival gradient/Mooncake forward                     | 26.6 ± 2.2 μs      | 26.6 ± 3 μs        | 1 ± 0.14                   |
+| AD gradients/lower(dist) adaptive-dispatch survival gradient/Mooncake reverse                     | 0.338 ± 0.039 ms   | 0.361 ± 0.031 ms   | 0.936 ± 0.14               |
+| AD gradients/lower(dist) adaptive-dispatch survival gradient/ReverseDiff (tape)                   | 0.318 ± 0.069 ms   | 0.318 ± 0.06 ms    | 1 ± 0.29                   |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Enzyme forward                     | 9.94 ± 2.3 μs      | 9.64 ± 1.3 μs      | 1.03 ± 0.28                |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Enzyme reverse                     | 0.309 ± 0.027 ms   | 0.299 ± 0.027 ms   | 1.04 ± 0.13                |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/ForwardDiff                        | 5.76 ± 0.95 μs     | 5.74 ± 0.92 μs     | 1 ± 0.23                   |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Mooncake forward                   | 26.9 ± 3 μs        | 27.4 ± 3.2 μs      | 0.98 ± 0.16                |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/Mooncake reverse                   | 0.343 ± 0.038 ms   | 0.354 ± 0.034 ms   | 0.97 ± 0.14                |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² > 1)/ReverseDiff (tape)                 | 0.32 ± 0.059 ms    | 0.327 ± 0.069 ms   | 0.977 ± 0.27               |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Enzyme forward                     | 10.2 ± 1.7 μs      | 10.1 ± 1.8 μs      | 1 ± 0.24                   |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Enzyme reverse                     | 0.308 ± 0.02 ms    | 0.299 ± 0.029 ms   | 1.03 ± 0.12                |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/ForwardDiff                        | 8.02 ± 0.6 μs      | 8.08 ± 0.68 μs     | 0.992 ± 0.11               |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Mooncake forward                   | 0.0383 ± 0.013 ms  | 0.0384 ± 0.012 ms  | 0.999 ± 0.46               |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/Mooncake reverse                   | 0.486 ± 0.031 ms   | 0.498 ± 0.032 ms   | 0.976 ± 0.088              |
+| AD gradients/lower(dist, PhaseType) survival gradient (c² ≤ 1)/ReverseDiff (tape)                 | 0.741 ± 0.18 ms    | 0.755 ± 0.16 ms    | 0.983 ± 0.31               |
+| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Enzyme forward          | 27 ± 3.5 μs        | 27.2 ± 3.2 μs      | 0.992 ± 0.17               |
+| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Enzyme reverse          | 0.136 ± 0.011 ms   | 0.122 ± 0.0093 ms  | 1.11 ± 0.12                |
+| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/ForwardDiff             | 17.2 ± 2.2 μs      | 17.1 ± 1.2 μs      | 1 ± 0.15                   |
+| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Mooncake forward        | 0.063 ± 0.0049 ms  | 0.0636 ± 0.0051 ms | 0.99 ± 0.11                |
+| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/Mooncake reverse        | 0.354 ± 0.026 ms   | 0.366 ± 0.028 ms   | 0.965 ± 0.1                |
+| AD gradients/lower(dist, PhaseType; phases) fixed-count survival gradient/ReverseDiff (tape)      | 2.69 ± 0.55 ms     | 2.73 ± 0.58 ms     | 0.983 ± 0.29               |
+| AD gradients/matrix_exp/transition_probability direct gradient/Enzyme forward                     | 25.8 ± 11 μs       | 26.3 ± 12 μs       | 0.98 ± 0.62                |
+| AD gradients/matrix_exp/transition_probability direct gradient/Enzyme reverse                     | 0.313 ± 0.025 ms   | 0.303 ± 0.029 ms   | 1.03 ± 0.13                |
+| AD gradients/matrix_exp/transition_probability direct gradient/ForwardDiff                        | 14.4 ± 1.7 μs      | 13.5 ± 1.5 μs      | 1.06 ± 0.17                |
+| AD gradients/matrix_exp/transition_probability direct gradient/Mooncake forward                   | 0.0735 ± 0.0068 ms | 0.0738 ± 0.0074 ms | 0.997 ± 0.14               |
+| AD gradients/matrix_exp/transition_probability direct gradient/Mooncake reverse                   | 0.473 ± 0.036 ms   | 0.469 ± 0.031 ms   | 1.01 ± 0.1                 |
+| AD gradients/matrix_exp/transition_probability direct gradient/ReverseDiff (tape)                 | 0.739 ± 0.16 ms    | 0.755 ± 0.16 ms    | 0.979 ± 0.3                |
+| AD gradients/ode_problem solve survival gradient (PhaseType)/Enzyme forward                       | 16.6 ± 0.95 ms     | 17.1 ± 0.75 ms     | 0.967 ± 0.069              |
+| AD gradients/ode_problem solve survival gradient (PhaseType)/ForwardDiff                          | 0.144 ± 0.0029 ms  | 0.143 ± 0.003 ms   | 1 ± 0.029                  |
+| AD gradients/ode_problem solve survival gradient (PhaseType)/Mooncake forward                     | 0.122 ± 0.03 s     | 0.121 ± 0.023 s    | 1.01 ± 0.31                |
+| AD gradients/ode_problem solve survival gradient (PhaseType, direct)/Enzyme forward               | 16.7 ± 0.8 ms      | 17.2 ± 0.74 ms     | 0.968 ± 0.062              |
+| AD gradients/ode_problem solve survival gradient (PhaseType, direct)/ForwardDiff                  | 0.144 ± 0.0031 ms  | 0.143 ± 0.0028 ms  | 1.01 ± 0.03                |
+| AD gradients/ode_problem solve survival gradient (PhaseType, direct)/Mooncake forward             | 0.12 ± 0.028 s     | 0.122 ± 0.027 s    | 0.982 ± 0.31               |
+| AD gradients/phase_type hyperexponential (α, S) gradient/Enzyme forward                           | 5.81 ± 0.1 μs      | 5.84 ± 0.11 μs     | 0.995 ± 0.026              |
+| AD gradients/phase_type hyperexponential (α, S) gradient/Enzyme reverse                           | 1.36 ± 0.054 μs    | 1.37 ± 0.05 μs     | 0.991 ± 0.054              |
+| AD gradients/phase_type hyperexponential (α, S) gradient/ForwardDiff                              | 0.506 ± 0.054 μs   | 0.512 ± 0.059 μs   | 0.987 ± 0.15               |
+| AD gradients/phase_type hyperexponential (α, S) gradient/Mooncake forward                         | 11 ± 0.71 μs       | 10.9 ± 0.6 μs      | 1.01 ± 0.086               |
+| AD gradients/phase_type hyperexponential (α, S) gradient/Mooncake reverse                         | 18.5 ± 0.78 μs     | 19.4 ± 0.8 μs      | 0.955 ± 0.056              |
+| AD gradients/phase_type hyperexponential (α, S) gradient/ReverseDiff (tape)                       | 8.12 ± 0.37 μs     | 8.02 ± 0.3 μs      | 1.01 ± 0.059               |
+| AD gradients/update(CTMC, rates) transition gradient/Enzyme forward                               | 23.9 ± 9.9 μs      | 24.3 ± 10 μs       | 0.982 ± 0.59               |
+| AD gradients/update(CTMC, rates) transition gradient/Enzyme reverse                               | 0.317 ± 0.028 ms   | 0.306 ± 0.027 ms   | 1.03 ± 0.13                |
+| AD gradients/update(CTMC, rates) transition gradient/ForwardDiff                                  | 13 ± 1.3 μs        | 13.2 ± 1.7 μs      | 0.985 ± 0.16               |
+| AD gradients/update(CTMC, rates) transition gradient/Mooncake forward                             | 0.0731 ± 0.006 ms  | 0.0745 ± 0.0062 ms | 0.982 ± 0.11               |
+| AD gradients/update(CTMC, rates) transition gradient/Mooncake reverse                             | 0.497 ± 0.045 ms   | 0.522 ± 0.032 ms   | 0.951 ± 0.1                |
+| AD gradients/update(CTMC, rates) transition gradient/ReverseDiff (tape)                           | 0.689 ± 0.16 ms    | 0.693 ± 0.17 ms    | 0.994 ± 0.33               |
+| AD gradients/update(Coxian, rates) survival gradient/Enzyme forward                               | 12.7 ± 2.9 μs      | 12.2 ± 2.8 μs      | 1.04 ± 0.34                |
+| AD gradients/update(Coxian, rates) survival gradient/Enzyme reverse                               | 0.31 ± 0.022 ms    | 0.302 ± 0.032 ms   | 1.02 ± 0.13                |
+| AD gradients/update(Coxian, rates) survival gradient/ForwardDiff                                  | 7.21 ± 1.5 μs      | 7.36 ± 0.76 μs     | 0.979 ± 0.23               |
+| AD gradients/update(Coxian, rates) survival gradient/Mooncake forward                             | 0.045 ± 0.013 ms   | 0.0431 ± 0.012 ms  | 1.04 ± 0.42                |
+| AD gradients/update(Coxian, rates) survival gradient/Mooncake reverse                             | 0.375 ± 0.043 ms   | 0.381 ± 0.043 ms   | 0.985 ± 0.16               |
+| AD gradients/update(Coxian, rates) survival gradient/ReverseDiff (tape)                           | 0.318 ± 0.066 ms   | 0.318 ± 0.06 ms    | 1 ± 0.28                   |
+| AD gradients/update(ErlangChain, rates) survival gradient/Enzyme forward                          | 10.8 ± 0.94 μs     | 11 ± 1.1 μs        | 0.976 ± 0.13               |
+| AD gradients/update(ErlangChain, rates) survival gradient/Enzyme reverse                          | 0.328 ± 0.023 ms   | 0.316 ± 0.028 ms   | 1.04 ± 0.12                |
+| AD gradients/update(ErlangChain, rates) survival gradient/ForwardDiff                             | 8.64 ± 0.69 μs     | 8.33 ± 0.61 μs     | 1.04 ± 0.11                |
+| AD gradients/update(ErlangChain, rates) survival gradient/Mooncake forward                        | 0.0399 ± 0.012 ms  | 0.046 ± 0.013 ms   | 0.866 ± 0.36               |
+| AD gradients/update(ErlangChain, rates) survival gradient/Mooncake reverse                        | 0.537 ± 0.063 ms   | 0.544 ± 0.055 ms   | 0.988 ± 0.15               |
+| AD gradients/update(ErlangChain, rates) survival gradient/ReverseDiff (tape)                      | 0.763 ± 0.19 ms    | 0.773 ± 0.16 ms    | 0.988 ± 0.32               |
+| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Enzyme forward                      | 11.6 ± 2.5 μs      | 11.7 ± 2.5 μs      | 0.994 ± 0.3                |
+| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Enzyme reverse                      | 0.309 ± 0.034 ms   | 0.296 ± 0.023 ms   | 1.04 ± 0.14                |
+| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/ForwardDiff                         | 6.7 ± 0.82 μs      | 7.04 ± 0.71 μs     | 0.951 ± 0.15               |
+| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Mooncake forward                    | 0.0418 ± 0.011 ms  | 0.039 ± 0.011 ms   | 1.07 ± 0.41                |
+| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/Mooncake reverse                    | 0.345 ± 0.037 ms   | 0.35 ± 0.026 ms    | 0.988 ± 0.13               |
+| AD gradients/update(PhaseType, [α; vec(S)]) survival gradient/ReverseDiff (tape)                  | 0.291 ± 0.047 ms   | 0.293 ± 0.047 ms   | 0.993 ± 0.23               |
+| Bridges/jump_problem (JumpProcesses)                                                              | 1.7 ± 0.19 μs      | 2.62 ± 0.21 μs     | 0.649 ± 0.091              |
+| Bridges/ode_problem (SciMLBase)                                                                   | 19.7 ± 0.38 μs     | 18.6 ± 0.34 μs     | 1.06 ± 0.028               |
+| Bridges/reaction_system (Catalyst)                                                                | 0.0726 ± 0.0022 ms | 0.0754 ± 0.0026 ms | 0.963 ± 0.044              |
+| Evaluation/ctmc builder + transition_probability                                                  | 4.96 ± 0.83 μs     | 4.95 ± 0.85 μs     | 1 ± 0.24                   |
+| Evaluation/phase-type matrix_exp                                                                  | 3.71 ± 2.5 μs      | 3.81 ± 2.5 μs      | 0.974 ± 0.91               |
+| Lowering/canonical(Erlang branch)                                                                 | 0.165 ± 0.053 μs   | 0.162 ± 0.043 μs   | 1.01 ± 0.42                |
+| Lowering/canonical(PhaseType branch)                                                              | 0.147 ± 0.015 μs   | 0.143 ± 0.014 μs   | 1.03 ± 0.15                |
+| Lowering/canonical(fixed phases)                                                                  | 0.232 ± 0.044 μs   | 0.225 ± 0.038 μs   | 1.03 ± 0.26                |
+| Lowering/lower(Exponential)                                                                       | 2.12 ± 0.061 μs    | 2.5 ± 0.061 μs     | 0.849 ± 0.032              |
+| Lowering/lower(Gamma, Erlang branch)                                                              | 0.0435 ± 0.025 μs  | 0.0441 ± 0.026 μs  | 0.985 ± 0.81               |
+| Lowering/lower(Gamma, PhaseType branch)                                                           | 0.139 ± 0.072 μs   | 0.149 ± 0.067 μs   | 0.928 ± 0.64               |
+| time_to_load                                                                                      | 0.529 ± 0.0046 s   | 0.517 ± 0.0043 s   | 1.02 ± 0.012               |
 
-|                                                                                                   | v0.1.0                    | 1ff0eed2187f9c...         | v0.1.0 / 1ff0eed2187f9c... |
+|                                                                                                   | v0.1.0                    | 5e99061c104bbe...         | v0.1.0 / 5e99061c104bbe... |
 |:--------------------------------------------------------------------------------------------------|:-------------------------:|:-------------------------:|:--------------------------:|
 | AD gradients/ctmc(specs...) builder + transition_probability gradient/ForwardDiff                 | 0.22 k allocs: 26.3 kB    | 0.22 k allocs: 26.3 kB    | 1                          |
 | AD gradients/ctmc(specs...) builder + transition_probability gradient/Mooncake forward            | 2.8 k allocs: 0.123 MB    | 2.8 k allocs: 0.123 MB    | 1                          |
