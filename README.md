@@ -58,7 +58,7 @@ See the [documentation](https://lowereddistributions.epiaware.org/dev/) for the 
 
 - [ComposedDistributions.jl](https://composeddistributions.epiaware.org/dev/) composes distributions into event-tree chains; loading it alongside this package lowers a whole `Sequential`/`Resolve`/`Compete`/`Parallel`/`Choose` chain to one dynamical system, not leaf by leaf.
 - [ConvolvedDistributions.jl](https://convolveddistributions.epiaware.org/dev/) sums independent delays; a lowering extension here lets a convolved series lower as a whole too.
-- [ModifiedDistributions.jl](https://modifieddistributions.epiaware.org/dev/) wraps a distribution with one behaviour change at a time; the lowering bridge for its modifier leaves lands here once it is registered.
+- [ModifiedDistributions.jl](https://modifieddistributions.epiaware.org/dev/) wraps a distribution with one behaviour change at a time; the modifiers that carry dynamics (an `affine` rescale, a hazard `modify` on an `Exponential`) lower, and the observation-only ones (a shift, a `weight`, a forward transform) are refused rather than silently approximated.
 - [CensoredDistributions.jl](https://censoreddistributions.epiaware.org/stable/) adds primary-event and interval censoring on top of a delay distribution, upstream of any lowering.
 - [DistributionsInference.jl](https://github.com/EpiAware/DistributionsInference.jl) is the emerging home for probabilistic-programming integrations across the EpiAware distribution packages.
 
