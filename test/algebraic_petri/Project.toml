@@ -1,11 +1,3 @@
-# PACKAGE-OWNED — not part of the kit's managed test-infra set.
-# Isolated environment for the AlgebraicPetri extension's tests, mirroring
-# `test/ad`'s isolated-environment pattern: AlgebraicPetri 0.10's own
-# Catalyst weakdep extension caps Catalyst at "13", incompatible with this
-# package's own `Catalyst = "16"`, so the two cannot resolve into the main
-# `test/Project.toml` environment. Run with:
-#
-#   julia --project=test/algebraic_petri test/algebraic_petri/runtests.jl
 [deps]
 AlgebraicPetri = "4f99eebe-17bf-4e98-b6a1-2c4f205a959b"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
