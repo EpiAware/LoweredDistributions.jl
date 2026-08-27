@@ -17,7 +17,7 @@ LoweredDistributions = "8539b7eb-0b85-40d0-a8a6-65093c3d0137"
 [sources]
 ADFixtures = {path = "../ADFixtures"}
 LoweredDistributions = {path = "../.."}
-ComposedDistributions = {url = "https://github.com/EpiAware/ComposedDistributions.jl", rev = "main"}
 
 [compat]
+ComposedDistributions = "0.1, 0.2"
 EpiAwarePackageTools = "0.3, 0.4"
