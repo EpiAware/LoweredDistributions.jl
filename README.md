@@ -19,8 +19,9 @@ onto a backend-agnostic dynamical-systems representation._
   thing; `lower` gives you the compartmental view without hand-deriving the
   generator each time.
 - Exact phase-type matches are used where they exist (Erlang chains,
-  two-state CTMCs, Coxian and general phase-type), with moment-matching as a
-  documented fallback when no exact chain exists.
+  two-state continuous-time Markov chains (CTMCs), Coxian and general
+  phase-type), with moment-matching as a documented fallback when no exact
+  chain exists.
 - Every lowering converges on one canonical `PhaseType(α, S)` shape, so a new
   backend only has to consume that single interface.
 - Four backend extensions (Catalyst, SciMLBase, JumpProcesses,

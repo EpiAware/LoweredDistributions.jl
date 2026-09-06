@@ -20,7 +20,8 @@
 # a tutorial heavy, matching ModifiedDistributions.jl's `composed-chains.jl`
 # precedent. The per-backend pages that load a heavy backend are
 # `HEAVY_TUTORIALS` below.
-const LIGHT_TUTORIALS = ["lowering-backends.jl", "fitting-ad-stable.jl"]
+const LIGHT_TUTORIALS = ["lowering-forms.jl", "lowering-backends.jl",
+    "fitting-ad-stable.jl"]
 
 # `ad-backends.jl` (the kit-managed AD-backends page, also under
 # `TUTORIALS_SUBDIR`) is deliberately absent from every list below, so it does

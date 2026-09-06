@@ -235,3 +235,35 @@ function Base.show(io::IO, ::MIME"text/plain", m::CTMC)
     end
     return nothing
 end
+
+# --- Absorbing CTMC -> canonical phase type ---------------------------------
+
+@doc """
+    PhaseType(m::CTMC)
+
+Read an absorbing [`CTMC`](@ref) as a canonical [`PhaseType`](@ref).
+
+The absorbing state is the one whose generator row is all zero. The remaining
+states are the transient phases, `S` is the generator restricted to them, and
+`α` starts in the first transient state — the convention `lower(::Exponential)`
+already follows.
+
+A chain with no absorbing state, or with more than one, has no scalar time to
+absorption. That is the shape `lower(::Parallel)` and `lower(::Choose)` produce,
+and it throws here rather than returning a meaningless law.
+"""
+function PhaseType(m::CTMC)
+    n = length(m.states)
+    absorbing = [i for i in 1:n if all(abs.(m.Q[i, :]) .<= 1e-12)]
+    length(absorbing) == 1 || throw(ArgumentError(
+        "a scalar phase-type needs exactly one absorbing state; this " *
+        "$(n)-state CTMC has $(length(absorbing)). A joint CTMC from " *
+        "Parallel or Choose has no scalar time to absorption."))
+    transient = [i for i in 1:n if i != only(absorbing)]
+    isempty(transient) &&
+        throw(ArgumentError("a phase type needs at least one transient state"))
+    S = m.Q[transient, transient]
+    T = eltype(S)
+    α = [i == 1 ? one(T) : zero(T) for i in eachindex(transient)]
+    return PhaseType(α, S)
+end
