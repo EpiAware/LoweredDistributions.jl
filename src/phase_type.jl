@@ -41,9 +41,26 @@ end
 
 # The `(mean, c²)` pair every two-moment fit reads, with the shared finite,
 # positive guard. `caller` names the entry point in the error message.
+#
+# `mean`/`var` have no distribution-agnostic fallback to rely on: Statistics
+# also defines a fully generic `mean(itr)`/`var(itr)` for *any* argument, so
+# `applicable(mean, d)` is always true and cannot tell a distribution with a
+# real `mean` method from one without. Without a distribution-specific method,
+# that generic fallback tries to `iterate(d)`, which a `Distribution` does not
+# support, and dies with a `MethodError` naming `iterate` — a symptom, not a
+# reason. Catching the `MethodError` here and naming the actual reason keeps
+# that internal detail out of the caller's error.
 function _two_moments(d::Distribution, caller::String)
-    m = mean(d)
-    v = var(d)
+    local m, v
+    try
+        m = mean(d)
+        v = var(d)
+    catch e
+        e isa MethodError || rethrow()
+        throw(ArgumentError(
+            "$caller needs a distribution with a defined mean and " *
+            "variance; $(typeof(d)) has neither."))
+    end
     (isfinite(m) && isfinite(v) && m > 0 && v > 0) || throw(ArgumentError(
         "$caller needs a finite positive mean and variance; got " *
         "mean = $m, var = $v for $(typeof(d))."))

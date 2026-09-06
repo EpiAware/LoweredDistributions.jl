@@ -34,6 +34,30 @@ end
     @test m.S == p.S
 end
 
+@testitem "lower(::Truncated) refuses rather than dying inside mean" begin
+    using LoweredDistributions, Distributions
+
+    # Reproduces issue #106: lower used to die inside Statistics.mean's
+    # generic iterable fallback with a MethodError naming `iterate`, which
+    # told a caller nothing. Truncation has no dynamical-systems image (it
+    # conditions on the event, a change of measure over the whole path), so
+    # this refuses explicitly instead.
+    @test_throws ArgumentError lower(truncated(Gamma(3.0, 1.5); upper = 10.0))
+    @test_throws ArgumentError lower(
+        truncated(Exponential(2.0); lower = 0.5, upper = 5.0))
+end
+
+@testitem "lower guards against a distribution with no mean method" begin
+    using LoweredDistributions, Distributions
+
+    # A minimal Distribution with no `mean`/`var` method: without the guard,
+    # `phase_type`'s moment fit falls through to Statistics' generic iterable
+    # `mean`/`var`, which fails inside `iterate` rather than naming the real
+    # reason (issue #106, same underlying defect as the Truncated case).
+    struct _NoMomentsDist <: ContinuousUnivariateDistribution end
+    @test_throws ArgumentError lower(_NoMomentsDist())
+end
+
 @testitem "lower falls back to phase_type for a general Distribution" begin
     using LoweredDistributions, Distributions
     import LoweredDistributions: AbstractChainTrick

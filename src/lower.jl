@@ -63,6 +63,50 @@ end
 lower(d::Distribution) = phase_type(d)
 
 """
+    lower(dist::Truncated)
+
+Refuse to lower a `Truncated` distribution.
+
+Truncation conditions on the event being observed within a window: it
+reweights the underlying law by the probability mass inside that window,
+a change of measure over the whole path rather than a memoryless dwell
+time. A dynamical-systems lowering has no image for that — there is no
+compartment structure whose absorption time is "the untruncated delay,
+given it falls in `[lower, upper]`". Lower the untruncated delay directly
+(`lower(dist.untruncated)`) if the latent process, not the truncated
+observation, is what is wanted.
+
+# Arguments
+
+  - `dist`: the `Truncated` distribution.
+
+# Examples
+
+```@example
+using LoweredDistributions, Distributions
+
+try
+    lower(truncated(Gamma(3.0, 1.5); upper = 10.0))
+catch e
+    println(e)
+end
+```
+
+# See also
+
+  - [`lower`](@ref): the general dispatch this refusal specialises.
+"""
+function lower(d::Truncated)
+    throw(ArgumentError(
+        "lower(::Truncated) has no dynamical-systems representation: " *
+        "truncation conditions on the event falling within a window, a " *
+        "change of measure over the whole path, not a memoryless dwell " *
+        "time a compartment structure could represent. Lower the " *
+        "untruncated delay directly (`lower(dist.untruncated)`) if the " *
+        "latent process is what is wanted."))
+end
+
+"""
     lower(dist::Distribution, ::Type{PhaseType}; max_phases = 1_000)
 
 Lower `dist` to the canonical [`PhaseType`](@ref) `(α, S)` form, whatever its
